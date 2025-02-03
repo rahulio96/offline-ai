@@ -1,0 +1,27 @@
+.container {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+}
+
+.header {
+    margin: 0;
+    padding-left: 12rem;
+}
+
+.iconBtn {
+    width: 3rem;
+    text-align: center;
+    margin-left: 10px;
+    margin-bottom: 0px;
+}
+
+.open {
+    padding-left: 12rem;
+    transition: 0.4s;
+}
+
+.close {
+    padding-left: 2rem;
+    transition: 0.4s;
+}

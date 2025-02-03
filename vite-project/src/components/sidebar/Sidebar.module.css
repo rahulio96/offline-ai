@@ -1,0 +1,41 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    background-color: #242424;
+    width: 13rem;
+    z-index: 1;
+    position: fixed;
+    text-align: center;
+    overflow-y: scroll;
+    height: 100vh;
+    padding: 0 10px;
+    text-align: left;
+}
+
+.open {
+    margin-left: 0px;
+    transition: 0.4s;
+}
+
+.close {
+    margin-left: -20rem;
+    transition: 0.4s;
+}
+
+.headerBtn {
+    display: flex;
+    justify-content: space-between;
+}
+
+button {
+    text-align: left;
+}
+
+h4 {
+    margin-left: 1px;
+}
+
+.iconBtn {
+    width: 3rem;
+    text-align: center;
+}

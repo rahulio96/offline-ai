@@ -1,34 +1,32 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import Header from './components/header/Header'
+import Sidebar from './components/sidebar/Sidebar'
 
 function App() {
-  const [count, setCount] = useState(0)
+  
+  const [isOpen, setIsOpen] = useState<boolean>(true)
+
+  const toggleSidebar = () => {
+    console.log(!isOpen)
+    setIsOpen(!isOpen)
+  }
 
   return (
-    <>
+    <div className="container">
+      <Header isOpen={isOpen} toggle={toggleSidebar} />
+      <Sidebar isOpen={isOpen} toggle={toggleSidebar} />
+
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      {/*
+        header (chat title)
+        chat box (contianer for chat messages)
+          -> chat messages (messages exchanged between llm and user)
+        chat input (user sends messages)
+      */}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+    </div>
   )
 }
 
