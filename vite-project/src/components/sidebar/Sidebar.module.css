@@ -1,7 +1,7 @@
 .container {
     display: flex;
     flex-direction: column;
-    background-color: #242424;
+    background-color: #1a1a1a;
     width: 13rem;
     z-index: 1;
     position: fixed;
@@ -9,7 +9,10 @@
     overflow-y: scroll;
     height: 100vh;
     padding: 0 10px;
+    padding-top: 0.7rem;
     text-align: left;
+    left: 0;
+    top: 0;
 }
 
 .open {
@@ -27,15 +30,63 @@
     justify-content: space-between;
 }
 
-button {
+.btn {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.5em 0.6em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    transition: background-color 0.25s;
+    width: 100%;
     text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.btn:hover {
+    background-color: #292929;
 }
 
-h4 {
-    margin-left: 1px;
+.new {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    margin-top: 0.5rem;
+}
+
+.chat {
+    height: 2.5rem;
+    font-weight: 400;
+}
+
+.chat:focus,
+.chat:focus-visible {
+    background-color: #292929;
+    outline: none;
+}
+
+.text {
+    margin-left: calc(0.5em + 1px);
+    font-weight: 700;
+    margin-bottom: 10px;
 }
 
 .iconBtn {
     width: 3rem;
     text-align: center;
+}
+
+.dots {
+    display: flex;
+    border: none;
+}
+
+.dots:hover {
+    transition: 0.25s;
+    background-color: #292929;
+    cursor: pointer;
 }

@@ -1,0 +1,19 @@
+.btn {
+    display: flex;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.3em 0.6em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    transition: background-color 0.25s;
+    width: fit-content;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn:hover {
+    background-color: #292929;
+}

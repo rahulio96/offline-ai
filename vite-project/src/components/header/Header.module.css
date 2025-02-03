@@ -6,10 +6,12 @@
 
 .header {
     margin: 0;
+    margin-top: -0.3rem;
     padding-left: 12rem;
 }
 
 .iconBtn {
+    margin-top: 0.7rem;
     width: 3rem;
     text-align: center;
     margin-left: 10px;
@@ -22,6 +24,6 @@
 }
 
 .close {
-    padding-left: 2rem;
+    padding-left: 1rem;
     transition: 0.4s;
 }

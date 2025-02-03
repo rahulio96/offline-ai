@@ -1,3 +1,9 @@
+import { useState } from 'react'
+import Dots from '../../icons/Dots'
+import Home from '../../icons/Home'
+import Plus from '../../icons/Plus'
+import SidebarLeft from '../../icons/SidebarLeft'
+import IconButton from '../buttons/IconButton'
 import style from './Sidebar.module.css'
 
 interface props {
@@ -8,19 +14,35 @@ interface props {
 
 export default function Sidebar({toggle, isOpen}: props) {
 
+    const [isDotHover, setIsDotHover] = useState<boolean>(false)
+    const [isBtnHover, setIsBtnHover] = useState<boolean>(false)
+
+    const toggleBtnHover = () => {
+        setIsBtnHover(!isBtnHover)
+    }
+
+    const toggleDotHover = () => {
+        setIsDotHover(!isDotHover)
+    }
+
     return (
         <div className={`${style.container} ${isOpen ? style.open : style.close}`}>
             <div className={style.headerBtn}>
-                <button className={style.iconBtn}>H</button>
-                <button className={style.iconBtn} onClick={toggle}>✖</button>
+                <IconButton><Home /></IconButton>
+                <IconButton onClick={toggle}><SidebarLeft /></IconButton>
             </div>
         
-            <button>New Chat</button>
+            <button className={`${style.btn} ${style.new}`}>New Chat <Plus /></button>
 
-            <h4>Chat History</h4>
-            <button>Chat 1</button>
-            <button>Chat 2</button>
-            <button>Chat 3</button>
+            <div className={style.text}>Chat History</div>
+            <button className={`${style.btn} ${style.chat}`} onMouseEnter={toggleBtnHover} onMouseLeave={toggleBtnHover}>
+                Chat 1
+                <div className={style.dots} onMouseEnter={toggleDotHover} onMouseLeave={toggleDotHover}>
+                    {isBtnHover && <Dots color={isDotHover ? '#FFFFFF' : '#ADADAD'}/>}
+                </div>
+            </button>
+            <button className={`${style.btn} ${style.chat}`}>Chat 2</button>
+            <button className={`${style.btn} ${style.chat}`}>Chat 3</button>
         </div>
     )
 }

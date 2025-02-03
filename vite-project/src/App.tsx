@@ -8,7 +8,6 @@ function App() {
   const [isOpen, setIsOpen] = useState<boolean>(true)
 
   const toggleSidebar = () => {
-    console.log(!isOpen)
     setIsOpen(!isOpen)
   }
 
