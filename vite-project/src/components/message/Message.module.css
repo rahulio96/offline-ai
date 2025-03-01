@@ -7,7 +7,9 @@
 }
 
 .user {
-    width: 75%;
+    width: fit-content;
+    max-width: 75%;
+    padding: 1rem 2rem;
     justify-self: right;
     background-color: #1a1a1a;
     margin-right: 1rem;

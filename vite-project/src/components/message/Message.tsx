@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import style from './Message.module.css'
 
 interface MessageProps {
@@ -8,7 +10,7 @@ interface MessageProps {
 const Message = ({text, isUser}: MessageProps) => {
   return (
     <div className={`${style.container} ${isUser ? style.user : ''}`}>
-        {text}
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   )
 }

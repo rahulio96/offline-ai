@@ -3,7 +3,7 @@ import './App.css'
 import Header from './components/header/Header'
 import Sidebar from './components/sidebar/Sidebar'
 import Input from './components/input/Input'
-import Message from './components/message/message'
+import Message from './components/message/Message'
 
 function App() {
 
@@ -27,7 +27,7 @@ function App() {
 
     // Simulate response with a delay
     setTimeout(() => {
-      setMessages(prevMessages => [...prevMessages, { text: `Echo: ${text}`, isUser: false }]);
+      setMessages(prevMessages => [...prevMessages, { text: text, isUser: false }]);
     }, 800);
     setText('');
   }
