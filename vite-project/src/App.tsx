@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import Header from './components/header/Header'
 import Sidebar from './components/sidebar/Sidebar'
+import Input from './components/input/Input'
 
 function App() {
   
@@ -16,13 +17,14 @@ function App() {
       <Header isOpen={isOpen} toggle={toggleSidebar} />
       <Sidebar isOpen={isOpen} toggle={toggleSidebar} />
 
-      <div>
+      <div className={"inner " + (isOpen ? "open" : "close")}>
       {/*
         header (chat title)
         chat box (contianer for chat messages)
           -> chat messages (messages exchanged between llm and user)
         chat input (user sends messages)
       */}
+        <Input />
       </div>
 
     </div>
