@@ -4,9 +4,18 @@
   height: 100vh;
 }
 
+.msgs {
+  overflow-y: auto;
+  justify-content: center;
+  align-items: center;
+  margin: 0rem 3rem;
+  margin-top: 2.5rem;
+  scroll-behavior: smooth;
+}
+
 .inner {
   margin-top: auto;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .open {

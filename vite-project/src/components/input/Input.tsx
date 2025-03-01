@@ -1,16 +1,14 @@
 import Send from '../../icons/Send';
 import IconButton from '../buttons/IconButton';
-import style from './input.module.css'
-import { useState } from 'react';
+import style from './Input.module.css'
 
-const Input = () => {
+interface InputProps {
+    text: string;
+    setText: (text: string) => void;
+    handleSend: () => void;
+}
 
-    const [text, setText] = useState('');
-
-    const handleSend = () => {
-        console.log(text);
-        setText('');
-    }
+const Input = ({text, setText, handleSend}: InputProps) => {
 
     return (
         <div className={style.container}>

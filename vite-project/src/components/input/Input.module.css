@@ -4,11 +4,14 @@
     justify-content: center;
     position: sticky;
     background-color: #242424;
+    padding-top: 0.5rem;
 }
 
-.textarea {
+.textarea {   
+    min-height: 3rem;
+    max-height: 15rem;
+    height: fit-content;
     width: 60%;
-    height: 3rem;
     padding: 1rem;
     margin-right: 1.5rem;
     resize: vertical;

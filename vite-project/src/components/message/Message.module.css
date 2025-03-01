@@ -1,0 +1,14 @@
+.container {
+    padding: 1rem;
+    justify-self: center;
+    width: 90%;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.user {
+    width: 75%;
+    justify-self: right;
+    background-color: #1a1a1a;
+    margin-right: 1rem;
+}
