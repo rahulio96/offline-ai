@@ -4,6 +4,7 @@ import Header from './components/header/Header'
 import Sidebar from './components/sidebar/Sidebar'
 import Input from './components/input/Input'
 import Message from './components/message/Message'
+import { invoke } from '@tauri-apps/api/core'
 
 function App() {
 
@@ -25,11 +26,13 @@ function App() {
     if (text === '') return;
     setMessages(prevMessages => [...prevMessages, { text: text, isUser: true }]);
 
-    // Simulate response with a delay
-    setTimeout(() => {
-      setMessages(prevMessages => [...prevMessages, { text: text, isUser: false }]);
-    }, 800);
-    setText('');
+    try {
+      const response: string = await invoke('chat_response', { userMessage: text });
+      setMessages(prevMessages => [...prevMessages, { text: response, isUser: false }]);
+      setText('');
+    } catch (error) {
+      console.error('Error with reponse: ', error);
+    }
   }
 
   useEffect(() => {
