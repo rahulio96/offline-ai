@@ -1,28 +1,29 @@
-use pyo3::prelude::*;
-use pyo3::ffi::c_str;
+use ollama_rs::generation::completion::request::GenerationRequest;
+use ollama_rs::Ollama;
+use tauri::{Window};
+use tauri::Emitter;
+use futures::StreamExt;
+
 
 #[tauri::command]
-fn chat_response(user_message: String) -> String {
-    Python::with_gil(|py| {
-        let chat_module = PyModule::from_code(
-          py,
-          c_str!(r#"def generate_response(user_message: str) -> str:
-            return "Echo, " + user_message
-            "#),
-          c_str!("chat_module.py"),
-          c_str!("chat_module"),
-        );
-        let response: String = chat_module.expect("Failed").getattr("generate_response").expect("Failed").call1((user_message,)).expect("Failed").extract().expect("Failed");
-        response
-    })
+// Stream responses from ollama back to the frontend
+async fn chat_response(window: Window, user_message: String) {
+  let ollama = Ollama::default();
+  let model = "deepseek-r1:7b".to_string();
+
+  let mut stream = ollama.generate_stream(GenerationRequest::new(model, user_message)).await.unwrap();
+
+  while let Some(res) = stream.next().await {
+    let responses = res.unwrap();
+    for resp in responses {
+        let _ = window.emit("stream-message", &resp.response.to_string());
+    }
+  }
 }
 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  // Initialize the Python interpreter
-  pyo3::prepare_freethreaded_python();
-
   tauri::Builder::default()
     .setup(|app| {
       if cfg!(debug_assertions) {
