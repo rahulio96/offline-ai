@@ -13,7 +13,7 @@ interface props {
 
 
 export default function Sidebar({toggle, isOpen}: props) {
-    const [testChats, setTestChats] = useState([...Array(30).keys()].map(i => i + 1))
+    const [testChats, setTestChats] = useState([1])
 
     const onDelete = (id: number) => {
         setTestChats(testChats.filter(chat => chat !== id))

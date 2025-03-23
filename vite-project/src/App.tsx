@@ -9,22 +9,20 @@ import { listen } from '@tauri-apps/api/event'
 
 function App() {
 
-  const [isOpen, setIsOpen] = useState<boolean>(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isResponding, setIsResponding] = useState<boolean>(false);
+  const [text, setText] = useState<string>('');
+  const [response, setResponse] = useState<string>('');
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const toggleSidebar = () => {
-    setIsOpen(!isOpen)
+    setIsSidebarOpen(!isSidebarOpen)
   }
 
   interface Message {
     text: string;
     isUser: boolean;
   }
-
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState('');
-  const [isResponding, setIsResponding] = useState(false);
-
-  const [response, setResponse] = useState('');
 
   // How messages work:
   // We have a messages array with all the messages that have been sent (user and llm)
@@ -33,12 +31,11 @@ function App() {
   // Once streaming is done, we set isResponding to false and stop rendering the temporary message
   // We then append the complete llm response to the messages array
 
-
   useEffect(() => {
     // Listen for stream message from backend
     // Update response with each element from the stream
     const unlisten = listen("stream-message", (event) => {
-      setResponse((prev) => prev + event.payload);
+      setResponse((prev) => prev + (event.payload as string));
     })
 
     return () => {
@@ -82,9 +79,9 @@ function App() {
 
   return (
     <div className="container">
-      <Header isOpen={isOpen} toggle={toggleSidebar} />
-      <Sidebar isOpen={isOpen} toggle={toggleSidebar} />
-      <div className={"msgs " + (isOpen ? "open" : "close")}>
+      <Header isOpen={isSidebarOpen} toggle={toggleSidebar} />
+      <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} />
+      <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
         {messages.map((msg, i) =>
           <Message key={i} text={msg.text} isUser={msg.isUser} />
         )}
@@ -93,10 +90,9 @@ function App() {
         {isResponding && <Message text={response} isUser={false} />}
       </div>
 
-      <div className={"inner " + (isOpen ? "open" : "close")}>
+      <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
         <Input text={text} setText={setText} handleSend={handleSend} />
       </div>
-
     </div>
   )
 }
