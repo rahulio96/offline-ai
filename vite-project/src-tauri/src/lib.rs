@@ -6,6 +6,19 @@ use ollama_rs::Ollama;
 use tauri::Emitter;
 use tauri::Window;
 
+#[tauri::command]
+// Get the list of models from ollama
+async fn get_modals() -> Vec<String> {
+    let ollama = Ollama::default();
+    let model_list = ollama.list_local_models().await.unwrap();
+    let mut model_names: Vec<String> = vec![];
+    for model in model_list {
+        let name = model.name;
+        model_names.push(name);
+    }
+    return model_names;
+}
+
 // TEMPORARY: Array of chat messages, this would ideally be stored somewhere instead of a global variable
 lazy_static::lazy_static! {
   static ref MESSAGES: tokio::sync::Mutex<Vec<ChatMessage>> = tokio::sync::Mutex::new(vec![]);
@@ -13,9 +26,9 @@ lazy_static::lazy_static! {
 
 #[tauri::command]
 // Stream responses from ollama back to the frontend
-async fn chat_response(window: Window, user_message: String) {
+async fn chat_response(window: Window, user_message: String, model_name: String) {
     let ollama = Ollama::default();
-    let model = "deepseek-r1:7b".to_string();
+    let model = model_name.to_string();
 
     // Get list of messages (history)
     let mut messages = MESSAGES.lock().await;
@@ -60,7 +73,7 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![chat_response])
+        .invoke_handler(tauri::generate_handler![chat_response, get_modals])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

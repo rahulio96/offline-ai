@@ -1,0 +1,13 @@
+.container {
+    font-size: 18px;
+    padding: 0.5em 0.6em;
+    border-right: 16px solid transparent;
+    border-radius: 8px;
+    background-color: #1a1a1a;
+    border-color: transparent;
+    cursor: pointer;
+}
+
+.option {
+    cursor: pointer;
+}

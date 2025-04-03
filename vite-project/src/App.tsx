@@ -15,6 +15,13 @@ function App() {
   const [response, setResponse] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
 
+  // Selected model from the dropdown
+  const [selectedModel, setSelectedModel] = useState<string>('');
+
+  // We need this since the user could change selected model while the llm is responding
+  // So we use this to immediately set the author model to the selected model
+  const [authorModel, setAuthorModel] = useState<string>('');
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen)
   }
@@ -46,19 +53,29 @@ function App() {
   // When we're done streaming the input, we update the messages with the response
   useEffect(() => {
     if (!isResponding && response) {
-      setMessages(prevMessages => [...prevMessages, { text: response, isUser: false }]);
+      const newResponse = response + `\n\n**Author Model: ${authorModel}**`;
+      setMessages(prevMessages => [...prevMessages, { text: newResponse, isUser: false }]);
       setResponse('');
     }
   }, [response, isResponding]);
 
   const handleSend = async () => {
     if (text === '' || isResponding) return;
+    
+    if (!selectedModel) {
+      alert('Please select a model first');
+      return;
+    }
+
+    const modelName = selectedModel;
+
     setMessages(prevMessages => [...prevMessages, { text: text, isUser: true }]);
     setIsResponding(true);
 
     try {
       setText('');
-      await invoke('chat_response', { userMessage: text });
+      setAuthorModel(modelName);
+      await invoke('chat_response', { userMessage: text, modelName: modelName });
       setIsResponding(false); // We're done streaming the llm's response
     } catch (error) {
       console.error('Error with reponse: ', error);
@@ -79,7 +96,7 @@ function App() {
 
   return (
     <div className="container">
-      <Header isOpen={isSidebarOpen} toggle={toggleSidebar} />
+      <Header isOpen={isSidebarOpen} toggle={toggleSidebar} setSelectedModel={setSelectedModel} />
       <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} />
       <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
         {messages.map((msg, i) =>
