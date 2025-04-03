@@ -5,6 +5,7 @@ use ollama_rs::generation::chat::ChatMessageResponseStream;
 use ollama_rs::Ollama;
 use tauri::Emitter;
 use tauri::Window;
+use std::process::Command;
 
 #[tauri::command]
 // Get the list of models from ollama
@@ -64,6 +65,8 @@ async fn chat_response(window: Window, user_message: String, model_name: String)
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            // Start ollama
+            Command::new("ollama").arg("serve").spawn().ok();
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
