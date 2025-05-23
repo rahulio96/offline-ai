@@ -6,11 +6,13 @@ import Input from './components/input/Input'
 import Message from './components/message/Message'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import LoadingMessage from './components/message/LoadingMessage'
 
 function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isResponding, setIsResponding] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [text, setText] = useState<string>('');
   const [response, setResponse] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -59,6 +61,13 @@ function App() {
     }
   }, [response, isResponding]);
 
+  // Stop loading animation once we get anything streamed from the LLM
+  useEffect(() => {
+    if (isLoading && response != '') {
+      setIsLoading(false);
+    }
+  }, [response]);
+
   const handleSend = async () => {
     if (text === '' || isResponding) return;
     
@@ -71,14 +80,17 @@ function App() {
 
     setMessages(prevMessages => [...prevMessages, { text: text, isUser: true }]);
     setIsResponding(true);
+    setIsLoading(true);
 
     try {
       setText('');
       setAuthorModel(modelName);
       await invoke('chat_response', { userMessage: text, modelName: modelName });
-      setIsResponding(false); // We're done streaming the llm's response
     } catch (error) {
+      setIsLoading(false);
       console.error('Error with reponse: ', error);
+    } finally {
+      setIsResponding(false); // We're done streaming the llm's response
     }
   }
 
@@ -102,6 +114,8 @@ function App() {
         {messages.map((msg, i) =>
           <Message key={i} text={msg.text} isUser={msg.isUser} />
         )}
+
+        {isLoading && <LoadingMessage />}
 
         {/* Temporary msg that only shows when streaming response */}
         {isResponding && <Message text={response} isUser={false} />}
