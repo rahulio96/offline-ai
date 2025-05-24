@@ -7,7 +7,7 @@ export default function Dropdown({setSelectedModel} : {setSelectedModel: (s: str
 
     const fetchModelNames = async () => {
         try {
-            const modelNameList = await invoke('get_modals');
+            const modelNameList = await invoke('get_models');
             setModelNames(modelNameList as string[]);
         } catch (error) {
             console.error('Error fetching model names:', error);

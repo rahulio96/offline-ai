@@ -6,10 +6,12 @@ use ollama_rs::Ollama;
 use tauri::Emitter;
 use tauri::Window;
 use std::process::Command;
+use std::sync::Mutex;
+use rusqlite::{Connection, Result};
 
 #[tauri::command]
 // Get the list of models from ollama
-async fn get_modals() -> Vec<String> {
+async fn get_models() -> Vec<String> {
     let ollama = Ollama::default();
     let model_list = ollama.list_local_models().await.unwrap();
     let mut model_names: Vec<String> = vec![];
@@ -18,6 +20,31 @@ async fn get_modals() -> Vec<String> {
         model_names.push(name);
     }
     return model_names;
+}
+
+// Initialize SQLite database
+fn init_db() -> Result<Connection> {
+    // TODO: Need to change path later
+    let conn = Connection::open("C:\\Users\\Rahul\\Desktop\\Projects\\react-desktop\\llm.db")?;
+
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS chats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS message (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (chat_id) REFERENCES chats(id)
+        );
+    ")?;
+    
+    Ok(conn)
 }
 
 // TEMPORARY: Array of chat messages, this would ideally be stored somewhere instead of a global variable
@@ -61,11 +88,23 @@ async fn chat_response(window: Window, user_message: String, model_name: String)
     messages.push(ChatMessage::assistant(llm_response));
 }
 
+// Struct to hold the database connection state
+pub struct DbState {
+    pub conn: Mutex<Connection>,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let conn = init_db().expect("Failed to initialize DB");
+
     tauri::Builder::default()
+        // Connect to db
+        .manage(DbState {
+            conn: Mutex::new(conn),
+        })
+
+        // Start ollama
         .setup(|app| {
-            // Start ollama
             Command::new("ollama").arg("serve").spawn().ok();
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -76,7 +115,12 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![chat_response, get_modals])
+
+        // API commands
+        .invoke_handler(tauri::generate_handler![
+            chat_response,
+            get_models
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
