@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
-import './App.css'
-import Header from './components/header/Header'
-import Sidebar from './components/sidebar/Sidebar'
-import Input from './components/input/Input'
-import Message from './components/message/Message'
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
-import LoadingMessage from './components/message/LoadingMessage'
+import { useEffect, useState } from 'react';
+import './App.css';
+import Header from './components/header/Header';
+import Sidebar from './components/sidebar/Sidebar';
+import Input from './components/input/Input';
+import Message from './components/message/Message';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import LoadingMessage from './components/message/LoadingMessage';
 
 function App() {
 
