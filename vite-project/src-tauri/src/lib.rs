@@ -3,8 +3,11 @@ use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::ChatMessageResponseStream;
 use ollama_rs::Ollama;
+use tauri::App;
 use tauri::Emitter;
+use tauri::Manager;
 use tauri::Window;
+use std::fs;
 use std::process::Command;
 use std::sync::Mutex;
 use rusqlite::{Connection, Result};
@@ -23,10 +26,21 @@ async fn get_models() -> Vec<String> {
 }
 
 // Initialize SQLite database
-fn init_db() -> Result<Connection> {
-    // TODO: Need to change path later
-    let conn = Connection::open("C:\\Users\\Rahul\\Desktop\\Projects\\react-desktop\\llm.db")?;
+fn init_db(app: &App) -> Result<Connection> {
 
+    // Create db file in app data directory (AppData/Roaming/com.tauri.com/llm.db)
+    let path = app.path().app_data_dir().expect("Failed to get app data dir").join("llm.db");
+
+    // Create directory if it doesn't exist
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).expect("Failed to create app data directory");
+        }
+    }
+
+    let conn = Connection::open(path)?;
+
+    // Init tables
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,16 +109,15 @@ pub struct DbState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let conn = init_db().expect("Failed to initialize DB");
-
     tauri::Builder::default()
-        // Connect to db
-        .manage(DbState {
-            conn: Mutex::new(conn),
-        })
-
-        // Start ollama
         .setup(|app| {
+            // Connect to db
+            let conn = init_db(&app).expect("Failed to initialize DB");
+            app.manage(DbState {
+                conn: Mutex::new(conn),
+            });
+
+            // Start ollama
             Command::new("ollama").arg("serve").spawn().ok();
             if cfg!(debug_assertions) {
                 app.handle().plugin(
