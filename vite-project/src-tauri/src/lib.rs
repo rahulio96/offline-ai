@@ -61,6 +61,45 @@ fn init_db(app: &App) -> Result<Connection> {
     Ok(conn)
 }
 
+struct Chat {
+    id: i32,
+    name: String,
+}
+
+// need to fetch all chats
+#[tauri::command]
+async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Vec<String>>, String> {
+    let conn = state.conn.lock().unwrap();
+    let mut stmt = conn.prepare("SELECT id, name, created_at FROM chats ORDER BY created_at DESC").unwrap();
+    let chat_iter = stmt.query_map([], |row| {
+        Ok(Chat {
+            id: row.get(0)?,
+            name: row.get(1)?,
+        })
+    }).unwrap();
+
+    let mut chats = Vec::new();
+    for chat in chat_iter {
+        let mut chat_item = Vec::<String>::new();
+        if let Ok(chat) = chat {
+            chat_item.push(chat.id.to_string());
+            chat_item.push(chat.name);
+            chats.push(chat_item);
+        }
+    }
+
+    Ok(chats)
+}
+
+// need to fetch all messages from a chat
+// need to save a message to a chat (also adds it to the fetched messages array)
+// need to save a chat (when creating a new chat, or renaming an existing one)
+// delete chat (and all associated messages)
+
+// When changing a chat, we'll need to fetch messages from db
+// When sending a message to the llm, need to save user message to db along with llm's response
+//      We'll also add it to the fetched messages array at the same time, so we don't need to fetch twice
+
 // TEMPORARY: Array of chat messages, this would ideally be stored somewhere instead of a global variable
 lazy_static::lazy_static! {
   static ref MESSAGES: tokio::sync::Mutex<Vec<ChatMessage>> = tokio::sync::Mutex::new(vec![]);
@@ -132,7 +171,8 @@ pub fn run() {
         // API commands
         .invoke_handler(tauri::generate_handler![
             chat_response,
-            get_models
+            get_models,
+            get_chats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

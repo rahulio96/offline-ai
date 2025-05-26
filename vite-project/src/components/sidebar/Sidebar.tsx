@@ -1,22 +1,51 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Home from '../../icons/Home'
 import Plus from '../../icons/Plus'
 import SidebarLeft from '../../icons/SidebarLeft'
 import IconButton from '../buttons/IconButton'
 import ChatBtn from './ChatBtn'
 import style from './Sidebar.module.css'
+import { invoke } from '@tauri-apps/api/core'
 
 interface props {
     toggle: () => void
     isOpen: boolean
 }
 
+type Chat = {
+    id: number;
+    name: string;
+}
 
 export default function Sidebar({toggle, isOpen}: props) {
-    const [testChats, setTestChats] = useState([1])
+    const [chatList, setChatList] = useState<Chat[]>([]);
 
+    const fetchChats = async () => {
+        setChatList([]);
+        try {
+            const chatStrings: String[][] = await invoke('get_chats');
+            let tempChatList: Chat[] = [];
+
+            for (let i = 0; i < chatStrings.length; i++) {
+                const chat: Chat = {
+                    id: parseInt(chatStrings[i][0] as string),
+                    name: chatStrings[i][1] as string
+                }
+                tempChatList.push(chat);
+            }
+            setChatList(tempChatList);
+        } catch (error) {
+            console.error('Error fetching chats:', error);
+        }
+    }
+
+    useEffect(() => {
+        fetchChats();
+    }, []);
+
+    // TODO: Update with db
     const onDelete = (id: number) => {
-        setTestChats(testChats.filter(chat => chat !== id))
+        // setTestChats(testChats.filter(chat => chat !== id))
         console.log(`Delete ID: ${id}`)
     }
 
@@ -34,8 +63,8 @@ export default function Sidebar({toggle, isOpen}: props) {
             <div className={style.scroll}>
                 <div className={style.history}>
                     <div className={style.text}>Chat History</div>
-                    {testChats.map((i) => (
-                        <ChatBtn key={i} onDelete={() => onDelete(i)} title={`Chat ${i}`} />
+                    {chatList.map((chat) => (
+                        <ChatBtn key={chat.id} onDelete={() => onDelete(chat.id)} title={chat.name} />
                     ))}
                 </div>
             </div>
