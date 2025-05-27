@@ -52,7 +52,6 @@ fn init_db(app: &App) -> Result<Connection> {
         CREATE TABLE IF NOT EXISTS message (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER NOT NULL,
-            role TEXT NOT NULL,
             author_model TEXT,
             content TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -61,6 +60,21 @@ fn init_db(app: &App) -> Result<Connection> {
     ")?;
     
     Ok(conn)
+}
+
+// need to fetch all messages from a chat
+// need to save a message to a chat (also adds it to the fetched messages array)
+// need to save a chat (when creating a new chat, or renaming an existing one)
+// delete chat (and all associated messages)
+
+// When changing a chat, we'll need to fetch messages from db
+// When sending a message to the llm, need to save user message to db along with llm's response
+// We'll also add it to the fetched messages array at the same time, so we don't need to fetch twice
+
+
+// TEMPORARY: Array of chat messages, this would ideally be stored somewhere instead of a global variable
+lazy_static::lazy_static! {
+  static ref MESSAGES: tokio::sync::Mutex<Vec<ChatMessage>> = tokio::sync::Mutex::new(vec![]);
 }
 
 #[derive(Serialize)]
@@ -91,18 +105,58 @@ async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Chat>, String
     Ok(chats)
 }
 
-// need to fetch all messages from a chat
-// need to save a message to a chat (also adds it to the fetched messages array)
-// need to save a chat (when creating a new chat, or renaming an existing one)
-// delete chat (and all associated messages)
+#[derive(Serialize)]
+struct CustomChatMessage {
+    id: i32,
+    chat_id: i32,
+    author_model: String,
+    content: String,
+    created_at: String,
+}
 
-// When changing a chat, we'll need to fetch messages from db
-// When sending a message to the llm, need to save user message to db along with llm's response
-//      We'll also add it to the fetched messages array at the same time, so we don't need to fetch twice
+// Fetch all messages
+#[tauri::command]
+async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<Vec<CustomChatMessage>, String> {
+    // Scope the lock to before await points
+    let (frontend_messages, backend_messages) = {
+        let conn = state.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM message WHERE chat_id = ? ORDER BY created_at ASC").unwrap();
+        let message_iter = stmt.query_map([chat_id], |row| {
+            Ok(CustomChatMessage {
+                id: row.get(0)?,
+                chat_id: row.get(1)?,
+                author_model: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        }).unwrap();
 
-// TEMPORARY: Array of chat messages, this would ideally be stored somewhere instead of a global variable
-lazy_static::lazy_static! {
-  static ref MESSAGES: tokio::sync::Mutex<Vec<ChatMessage>> = tokio::sync::Mutex::new(vec![]);
+        let mut frontend_messages = Vec::new();
+        let mut backend_messages = Vec::new();
+
+        for message in message_iter {
+            if let Ok(message) = message {
+                let parsed_msg: ChatMessage = serde_json::from_str(&message.content).unwrap();
+                backend_messages.push(parsed_msg.clone());
+
+                frontend_messages.push(CustomChatMessage {
+                    id: message.id,
+                    chat_id: message.chat_id,
+                    author_model: message.author_model,
+                    content: parsed_msg.content,
+                    created_at: message.created_at,
+                });
+            }
+        }
+        (frontend_messages, backend_messages)
+    };
+
+    // Now update the global messages variable
+    let mut global_messages = MESSAGES.lock().await;
+    global_messages.clear();
+    global_messages.extend(backend_messages);
+
+    Ok(frontend_messages)
 }
 
 #[tauri::command]
@@ -173,6 +227,7 @@ pub fn run() {
             chat_response,
             get_models,
             get_chats,
+            get_messages,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
