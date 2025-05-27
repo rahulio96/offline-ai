@@ -11,6 +11,7 @@ use std::fs;
 use std::process::Command;
 use std::sync::Mutex;
 use rusqlite::{Connection, Result};
+use serde::Serialize;
 
 #[tauri::command]
 // Get the list of models from ollama
@@ -52,6 +53,7 @@ fn init_db(app: &App) -> Result<Connection> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER NOT NULL,
             role TEXT NOT NULL,
+            author_model TEXT,
             content TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (chat_id) REFERENCES chats(id)
@@ -61,14 +63,15 @@ fn init_db(app: &App) -> Result<Connection> {
     Ok(conn)
 }
 
+#[derive(Serialize)]
 struct Chat {
     id: i32,
     name: String,
 }
 
-// need to fetch all chats
+// Fetch all chats
 #[tauri::command]
-async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Vec<String>>, String> {
+async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Chat>, String> {
     let conn = state.conn.lock().unwrap();
     let mut stmt = conn.prepare("SELECT id, name, created_at FROM chats ORDER BY created_at DESC").unwrap();
     let chat_iter = stmt.query_map([], |row| {
@@ -80,11 +83,8 @@ async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Vec<String>>,
 
     let mut chats = Vec::new();
     for chat in chat_iter {
-        let mut chat_item = Vec::<String>::new();
         if let Ok(chat) = chat {
-            chat_item.push(chat.id.to_string());
-            chat_item.push(chat.name);
-            chats.push(chat_item);
+            chats.push(chat);
         }
     }
 

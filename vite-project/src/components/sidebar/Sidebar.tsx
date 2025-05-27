@@ -23,17 +23,7 @@ export default function Sidebar({toggle, isOpen}: props) {
     const fetchChats = async () => {
         setChatList([]);
         try {
-            const chatStrings: String[][] = await invoke('get_chats');
-            let tempChatList: Chat[] = [];
-
-            for (let i = 0; i < chatStrings.length; i++) {
-                const chat: Chat = {
-                    id: parseInt(chatStrings[i][0] as string),
-                    name: chatStrings[i][1] as string
-                }
-                tempChatList.push(chat);
-            }
-            setChatList(tempChatList);
+            setChatList(await invoke('get_chats'));
         } catch (error) {
             console.error('Error fetching chats:', error);
         }
