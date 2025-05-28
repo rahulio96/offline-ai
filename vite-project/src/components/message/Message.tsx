@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react';
 interface MessageProps {
   text: string;
   isUser: boolean;
+  authorModel?: string;
 }
 
-const Message = ({ text, isUser }: MessageProps) => {
+const Message = ({ text, isUser, authorModel }: MessageProps) => {
 
   const [thinkText, setThinkText] = useState<string>('');
   const [isThinking, setIsThinking] = useState<boolean>(false);
@@ -47,9 +48,15 @@ const Message = ({ text, isUser }: MessageProps) => {
         thinkLength = idx + 8;
         setThinkText(replaceThinkTags(text.slice(0, thinkLength)));
       }
-      setDisplayText(text.slice(thinkLength, text.length));
-    }
 
+      // Include author model if it's there
+      if (authorModel) {
+        setDisplayText(text.slice(thinkLength, text.length) + `\n\n**Author Model:** ${authorModel}`);
+      } else {
+        setDisplayText(text.slice(thinkLength, text.length));
+      }
+    }
+    
   }, [text, isThinking]);
 
   return (

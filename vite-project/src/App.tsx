@@ -74,7 +74,7 @@ function App() {
 
   const addResponse = async () => {
       if (!isResponding && response) {
-        // const newResponse = response + `\n\n**Author Model: ${authorModel}**`;
+        // Add the llm's response to the backend and db
         const llmMessage: Message = await invoke('save_message', { message: response, chatId: CHAT_ID, authorModel: authorModel });
         setMessages(prevMessages => [...prevMessages, llmMessage]);
         setResponse('');
@@ -103,11 +103,7 @@ function App() {
 
     const modelName = selectedModel;
 
-    // ADD USER MESSAGE
-
-    // The problem is that we're adding user msg to frontend and then sending it to the backend for llm response all in one go
-    // So we need to send the user message to backend (insert to db), then return it to the frontend db-ified (w/ id's and stuff)
-
+    // Add the user's message to the backend and db
     const userMessage: Message = await invoke('save_message', { message: text, chatId: CHAT_ID });
     setMessages(prevMessages => [...prevMessages, userMessage]);
 
@@ -144,7 +140,7 @@ function App() {
       <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} />
       <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
         {messages.map((msg, i) =>
-          <Message key={i} text={msg.content} isUser={msg.author_model ? false : true} />
+          <Message key={i} text={msg.content} isUser={msg.author_model ? false : true} authorModel={msg.author_model} />
         )}
 
         {isLoading && <LoadingMessage />}

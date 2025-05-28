@@ -63,17 +63,11 @@ fn init_db(app: &App) -> Result<Connection> {
     Ok(conn)
 }
 
-// need to fetch all messages from a chat
-// need to save a message to a chat (also adds it to the fetched messages array)
+// TODO LIST:
 // need to save a chat (when creating a new chat, or renaming an existing one)
 // delete chat (and all associated messages)
 
-// When changing a chat, we'll need to fetch messages from db
-// When sending a message to the llm, need to save user message to db along with llm's response
-// We'll also add it to the fetched messages array at the same time, so we don't need to fetch twice
-
-
-// TEMPORARY: Array of chat messages, this would ideally be stored somewhere instead of a global variable
+// Global variable that holds messages for the current chat
 lazy_static::lazy_static! {
   static ref MESSAGES: tokio::sync::Mutex<Vec<ChatMessage>> = tokio::sync::Mutex::new(vec![]);
 }
@@ -115,14 +109,10 @@ struct CustomChatMessage {
     created_at: String,
 }
 
-
-// TODO: FIX THIS SHIT
-// Invalid type string (see console)
-
-// Fetch all messages
+// Fetch all messages from the current chat
 #[tauri::command]
 async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<Vec<CustomChatMessage>, String> {
-    // Scope the lock to before await points
+    // Locking here, so we need to put it in a closure to avoid issues
     let (frontend_messages, backend_messages) = {
         let conn = state.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM message WHERE chat_id = ? ORDER BY created_at ASC").unwrap();
@@ -136,20 +126,18 @@ async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<
             })
         }).unwrap();
 
+        // Update both the global messages variable and the frontend messages
         let mut frontend_messages = Vec::new();
         let mut backend_messages = Vec::new();
 
         for message in message_iter {
             if let Ok(message) = message {
-                let parsed_msg: ChatMessage = match serde_json::from_str(&message.content) {
-                    Ok(msg) => msg,
-                    Err(err) => {
-                        eprintln!("Failed to parse message content: {}", err);
-                        continue; // Skip this message instead of panicking
-                    }
-                };
+                let parsed_msg: ChatMessage = serde_json::from_str(&message.content).unwrap();
+
+                // Backend will get the message in the format that ollama uses
                 backend_messages.push(parsed_msg.clone());
 
+                // Frontend ditches the extra info from the ollama format and only uses the content
                 frontend_messages.push(CustomChatMessage {
                     id: message.id,
                     chat_id: message.chat_id,
@@ -195,15 +183,16 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
                 params![chat_id, user_json_content]).unwrap();
         }
 
+        // Once we insert, we fetch it from the db to get info like msg id (will be useful later for deleting/editing)
         let last_id = conn.last_insert_rowid();
-        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM message WHERE id = ?", ).unwrap();
+        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, created_at FROM message WHERE id = ?", ).unwrap();
             row = stmt.query_row([last_id], |row| {
             Ok(CustomChatMessage {
                 id: row.get(0)?,
                 chat_id: row.get(1)?,
                 author_model: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
+                content: message.clone(),
+                created_at: row.get(3)?,
             })
         }).unwrap();
     }
@@ -215,7 +204,7 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
 
 #[tauri::command]
 // Stream responses from ollama back to the frontend
-async fn chat_response(state: tauri::State<'_, DbState>, window: Window, user_message: String, model_name: String, chat_id: i32) -> Result<(), String> {
+async fn chat_response(window: Window, model_name: String) -> Result<(), String> {
     let ollama = Ollama::default();
     let model = model_name.to_string();
     let messages = MESSAGES.lock().await;
@@ -253,7 +242,9 @@ pub fn run() {
         .setup(|app| {
             // Connect to db
             let conn = init_db(&app).expect("Failed to initialize DB");
-            // conn.execute("INSERT INTO chats (name) VALUES (?1)", params!["New Chat"]).unwrap();
+
+            // TODO: TEMPORARY JUST FOR TESTING
+            conn.execute("INSERT INTO chats (name) VALUES (?1)", params!["New Chat"]).unwrap();
             app.manage(DbState {
                 conn: Mutex::new(conn),
             });
