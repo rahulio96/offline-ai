@@ -10,6 +10,9 @@ import LoadingMessage from './components/message/LoadingMessage';
 
 function App() {
 
+  // TODO CHANGE LATER
+  const CHAT_ID = 1;
+
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isResponding, setIsResponding] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -27,10 +30,13 @@ function App() {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen)
   }
-
+  
   interface Message {
-    text: string;
-    isUser: boolean;
+    id: number,
+    chat_id: number,
+    author_model: string,
+    content: string,
+    created_at: string,
   }
 
   // How messages work:
@@ -39,6 +45,20 @@ function App() {
   // When the llm responds to the user, we show a temporary message with the response as it's being streamed from backend
   // Once streaming is done, we set isResponding to false and stop rendering the temporary message
   // We then append the complete llm response to the messages array
+
+  const fetchMessages = async (chatId: number) => {
+    try {
+      const msgs: Message[] = await invoke('get_messages', { chatId: chatId });
+      console.log(JSON.stringify(msgs));
+      setMessages(msgs);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchMessages(CHAT_ID);
+  }, [])
 
   useEffect(() => {
     // Listen for stream message from backend
@@ -52,13 +72,18 @@ function App() {
     }
   }, []);
 
+  const addResponse = async () => {
+      if (!isResponding && response) {
+        // const newResponse = response + `\n\n**Author Model: ${authorModel}**`;
+        const llmMessage: Message = await invoke('save_message', { message: response, chatId: CHAT_ID, authorModel: authorModel });
+        setMessages(prevMessages => [...prevMessages, llmMessage]);
+        setResponse('');
+      }
+  }
+
   // When we're done streaming the input, we update the messages with the response
   useEffect(() => {
-    if (!isResponding && response) {
-      const newResponse = response + `\n\n**Author Model: ${authorModel}**`;
-      setMessages(prevMessages => [...prevMessages, { text: newResponse, isUser: false }]);
-      setResponse('');
-    }
+      addResponse();
   }, [response, isResponding]);
 
   // Stop loading animation once we get anything streamed from the LLM
@@ -78,14 +103,21 @@ function App() {
 
     const modelName = selectedModel;
 
-    setMessages(prevMessages => [...prevMessages, { text: text, isUser: true }]);
+    // ADD USER MESSAGE
+
+    // The problem is that we're adding user msg to frontend and then sending it to the backend for llm response all in one go
+    // So we need to send the user message to backend (insert to db), then return it to the frontend db-ified (w/ id's and stuff)
+
+    const userMessage: Message = await invoke('save_message', { message: text, chatId: CHAT_ID });
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+
     setIsResponding(true);
     setIsLoading(true);
 
     try {
       setText('');
       setAuthorModel(modelName);
-      await invoke('chat_response', { userMessage: text, modelName: modelName });
+      await invoke('chat_response', { userMessage: text, modelName: modelName, chatId: CHAT_ID });
     } catch (error) {
       setIsLoading(false);
       console.error('Error with reponse: ', error);
@@ -112,7 +144,7 @@ function App() {
       <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} />
       <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
         {messages.map((msg, i) =>
-          <Message key={i} text={msg.text} isUser={msg.isUser} />
+          <Message key={i} text={msg.content} isUser={msg.author_model ? false : true} />
         )}
 
         {isLoading && <LoadingMessage />}

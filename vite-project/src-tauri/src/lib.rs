@@ -3,6 +3,7 @@ use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::ChatMessageResponseStream;
 use ollama_rs::Ollama;
+use rusqlite::params;
 use tauri::App;
 use tauri::Emitter;
 use tauri::Manager;
@@ -109,7 +110,7 @@ async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Chat>, String
 struct CustomChatMessage {
     id: i32,
     chat_id: i32,
-    author_model: String,
+    author_model: Option<String>,
     content: String,
     created_at: String,
 }
@@ -160,17 +161,54 @@ async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<
 }
 
 #[tauri::command]
-// Stream responses from ollama back to the frontend
-async fn chat_response(window: Window, user_message: String, model_name: String) {
-    let ollama = Ollama::default();
-    let model = model_name.to_string();
-
+async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id: i32, author_model: Option<String>) -> Result<CustomChatMessage, String> {
     // Get list of messages (history)
     let mut messages = MESSAGES.lock().await;
 
     // Format user message and add to history
-    let user_message = ChatMessage::user(user_message.to_string());
+    let user_message = ChatMessage::user(message.to_string());
+    let user_json_content = serde_json::to_string(&message).unwrap();
+
+    let row;
+
+    // Insert user message into DB (lock only for this block)
+    {
+        let conn = state.conn.lock().unwrap();
+
+        if author_model.is_some() {
+            // If author_model is provided, use it
+            conn.execute("INSERT INTO MESSAGE (chat_id, author_model, content) VALUES (?1, ?2, ?3)",
+                params![chat_id, author_model, user_json_content]).unwrap();
+        } else {
+            // Otherwise, insert without author_model
+            conn.execute("INSERT INTO MESSAGE (chat_id, content) VALUES (?1, ?2)",
+                params![chat_id, user_json_content]).unwrap();
+        }
+
+        let last_id = conn.last_insert_rowid();
+        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM message WHERE id = ?", ).unwrap();
+            row = stmt.query_row([last_id], |row| {
+            Ok(CustomChatMessage {
+                id: row.get(0)?,
+                chat_id: row.get(1)?,
+                author_model: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        }).unwrap();
+    }
+
     messages.push(user_message);
+
+    Ok(row)
+}
+
+#[tauri::command]
+// Stream responses from ollama back to the frontend
+async fn chat_response(state: tauri::State<'_, DbState>, window: Window, user_message: String, model_name: String, chat_id: i32) -> Result<(), String> {
+    let ollama = Ollama::default();
+    let model = model_name.to_string();
+    let messages = MESSAGES.lock().await;
 
     // Response stream from LLM
     let mut stream: ChatMessageResponseStream = ollama
@@ -191,8 +229,7 @@ async fn chat_response(window: Window, user_message: String, model_name: String)
         llm_response += partial_response.as_str();
     }
 
-    // Add complete response to the history
-    messages.push(ChatMessage::assistant(llm_response));
+    Ok(())
 }
 
 // Struct to hold the database connection state
@@ -206,6 +243,7 @@ pub fn run() {
         .setup(|app| {
             // Connect to db
             let conn = init_db(&app).expect("Failed to initialize DB");
+            conn.execute("INSERT INTO chats (name) VALUES (?1)", params!["New Chat"]).unwrap();
             app.manage(DbState {
                 conn: Mutex::new(conn),
             });
@@ -228,6 +266,7 @@ pub fn run() {
             get_models,
             get_chats,
             get_messages,
+            save_message,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
