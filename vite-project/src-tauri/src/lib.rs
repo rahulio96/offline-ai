@@ -115,6 +115,10 @@ struct CustomChatMessage {
     created_at: String,
 }
 
+
+// TODO: FIX THIS SHIT
+// Invalid type string (see console)
+
 // Fetch all messages
 #[tauri::command]
 async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<Vec<CustomChatMessage>, String> {
@@ -137,7 +141,13 @@ async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<
 
         for message in message_iter {
             if let Ok(message) = message {
-                let parsed_msg: ChatMessage = serde_json::from_str(&message.content).unwrap();
+                let parsed_msg: ChatMessage = match serde_json::from_str(&message.content) {
+                    Ok(msg) => msg,
+                    Err(err) => {
+                        eprintln!("Failed to parse message content: {}", err);
+                        continue; // Skip this message instead of panicking
+                    }
+                };
                 backend_messages.push(parsed_msg.clone());
 
                 frontend_messages.push(CustomChatMessage {
@@ -167,7 +177,7 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
 
     // Format user message and add to history
     let user_message = ChatMessage::user(message.to_string());
-    let user_json_content = serde_json::to_string(&message).unwrap();
+    let user_json_content = serde_json::to_string(&user_message).unwrap();
 
     let row;
 
@@ -243,7 +253,7 @@ pub fn run() {
         .setup(|app| {
             // Connect to db
             let conn = init_db(&app).expect("Failed to initialize DB");
-            conn.execute("INSERT INTO chats (name) VALUES (?1)", params!["New Chat"]).unwrap();
+            // conn.execute("INSERT INTO chats (name) VALUES (?1)", params!["New Chat"]).unwrap();
             app.manage(DbState {
                 conn: Mutex::new(conn),
             });
