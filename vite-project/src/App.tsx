@@ -181,9 +181,11 @@ function App() {
 
   return (
     <div className="container">
-      {isPopupOpen && <NewChat onSave={createNewChat} onCancel={() => setIsPopupOpen(false)} value={newChatName} setValue={setNewChatName} />};
+      {isPopupOpen && <NewChat onSave={createNewChat} onCancel={() => setIsPopupOpen(false)} value={newChatName} setValue={setNewChatName} />}
+        
       <Header isOpen={isSidebarOpen} toggle={toggleSidebar} setSelectedModel={setSelectedModel} />
-      <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} setIsOpen={setIsPopupOpen} chatList={chatList} />
+      <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} setIsOpen={setIsPopupOpen} chatList={chatList} setChatList={setChatList} />
+      
       <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
         {messages.map((msg, i) =>
           <Message key={i} text={msg.content} isUser={msg.author_model ? false : true} authorModel={msg.author_model} />

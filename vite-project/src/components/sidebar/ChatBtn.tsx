@@ -85,9 +85,8 @@ export default function ChatBtn({ title, onDelete }: props) {
             </div>
 
             {isPopupOpen &&
-                <div className={`${style.popup}`} style={{ left: x-170, top: y-20}}onClick={onDelete}>
-                    <Trash /> <div className={style.delete}>Delete Chat</div>
-                    
+                <div className={`${style.popup}`} style={{ left: x-170, top: y-20}} onClick={onDelete}>
+                    <Trash /> <div className={style.delete}>Delete Chat</div>    
                 </div>}
         </button>
     )

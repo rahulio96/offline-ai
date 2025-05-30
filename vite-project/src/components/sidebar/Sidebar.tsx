@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import Home from '../../icons/Home'
 import Plus from '../../icons/Plus'
 import SidebarLeft from '../../icons/SidebarLeft'
@@ -10,6 +11,7 @@ interface props {
     isOpen: boolean
     setIsOpen: (isOpen: boolean) => void
     chatList: Chat[]
+    setChatList: (chatList: Chat[]) => void
 }
 
 type Chat = {
@@ -17,13 +19,11 @@ type Chat = {
     name: string;
 }
 
-export default function Sidebar({toggle, isOpen, setIsOpen, chatList}: props) {
+export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatList }: props) {
 
-
-    // TODO: Update with db
-    const onDelete = (id: number) => {
-        // setTestChats(testChats.filter(chat => chat !== id))
-        console.log(`Delete ID: ${id}`)
+    const onDelete = async (id: number) => {
+        await invoke('delete_chat', { chatId: id })
+        setChatList(chatList.filter(chat => chat.id !== id))
     }
 
     return (
@@ -35,8 +35,8 @@ export default function Sidebar({toggle, isOpen, setIsOpen, chatList}: props) {
                 </div>
                 <button className={`${style.btn} ${style.new}`} onClick={() => setIsOpen(true)}>New Chat <Plus /></button>
             </div>
-        
-            
+
+
             <div className={style.scroll}>
                 <div className={style.history}>
                     <div className={style.text}>Chat History</div>

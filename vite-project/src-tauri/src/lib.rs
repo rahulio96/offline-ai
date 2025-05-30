@@ -31,7 +31,7 @@ async fn get_models() -> Vec<String> {
 fn init_db(app: &App) -> Result<Connection> {
 
     // Create db file in app data directory (AppData/Roaming/com.tauri.com/llm.db)
-    let path = app.path().app_data_dir().expect("Failed to get app data dir").join("llm.db");
+    let path = app.path().app_data_dir().expect("Failed to get app data dir").join("history.db");
 
     // Create directory if it doesn't exist
     if let Some(parent) = path.parent() {
@@ -50,7 +50,7 @@ fn init_db(app: &App) -> Result<Connection> {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
-        CREATE TABLE IF NOT EXISTS message (
+        CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER NOT NULL,
             author_model TEXT,
@@ -62,10 +62,6 @@ fn init_db(app: &App) -> Result<Connection> {
     
     Ok(conn)
 }
-
-// TODO LIST:
-// need to save a chat (when creating a new chat, or renaming an existing one)
-// delete chat (and all associated messages)
 
 // Global variable that holds messages for the current chat
 lazy_static::lazy_static! {
@@ -82,7 +78,7 @@ struct Chat {
 #[tauri::command]
 async fn create_chat(state: tauri::State<'_, DbState>, name: String) -> Result<Chat, String> {
     let conn = state.conn.lock().unwrap();
-    conn.execute("INSERT INTO chats (name) VALUES (?1)", params![name]).unwrap();
+    conn.execute("INSERT INTO CHATS (name) VALUES (?1)", params![name]).unwrap();
     
     // Get the last inserted chat id
     let last_id = conn.last_insert_rowid();
@@ -93,11 +89,25 @@ async fn create_chat(state: tauri::State<'_, DbState>, name: String) -> Result<C
     })
 }
 
+// Delete a chat and its associated messages from db
+#[tauri::command]
+async fn delete_chat(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<(), String> {
+    let conn = state.conn.lock().unwrap();
+    
+    // Delete messages associated with the chat
+    conn.execute("DELETE FROM MESSAGES WHERE chat_id = ?", params![chat_id]).unwrap();
+    
+    // Delete the chat itself
+    conn.execute("DELETE FROM CHATS WHERE id = ?", params![chat_id]).unwrap();
+    
+    Ok(())
+}
+
 // Fetch all chats
 #[tauri::command]
 async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Chat>, String> {
     let conn = state.conn.lock().unwrap();
-    let mut stmt = conn.prepare("SELECT id, name, created_at FROM chats ORDER BY created_at DESC").unwrap();
+    let mut stmt = conn.prepare("SELECT id, name, created_at FROM CHATS ORDER BY created_at DESC").unwrap();
     let chat_iter = stmt.query_map([], |row| {
         Ok(Chat {
             id: row.get(0)?,
@@ -130,7 +140,7 @@ async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<
     // Locking here, so we need to put it in a closure to avoid issues
     let (frontend_messages, backend_messages) = {
         let conn = state.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM message WHERE chat_id = ? ORDER BY created_at ASC").unwrap();
+        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM MESSAGES WHERE chat_id = ? ORDER BY created_at ASC").unwrap();
         let message_iter = stmt.query_map([chat_id], |row| {
             Ok(CustomChatMessage {
                 id: row.get(0)?,
@@ -190,17 +200,17 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
 
         if author_model.is_some() {
             // If author_model is provided, use it
-            conn.execute("INSERT INTO MESSAGE (chat_id, author_model, content) VALUES (?1, ?2, ?3)",
+            conn.execute("INSERT INTO MESSAGES (chat_id, author_model, content) VALUES (?1, ?2, ?3)",
                 params![chat_id, author_model, user_json_content]).unwrap();
         } else {
             // Otherwise, insert without author_model
-            conn.execute("INSERT INTO MESSAGE (chat_id, content) VALUES (?1, ?2)",
+            conn.execute("INSERT INTO MESSAGES (chat_id, content) VALUES (?1, ?2)",
                 params![chat_id, user_json_content]).unwrap();
         }
 
         // Once we insert, we fetch it from the db to get info like msg id (will be useful later for deleting/editing)
         let last_id = conn.last_insert_rowid();
-        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, created_at FROM message WHERE id = ?", ).unwrap();
+        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, created_at FROM MESSAGES WHERE id = ?", ).unwrap();
             row = stmt.query_row([last_id], |row| {
             Ok(CustomChatMessage {
                 id: row.get(0)?,
@@ -281,6 +291,7 @@ pub fn run() {
             get_messages,
             save_message,
             create_chat,
+            delete_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
