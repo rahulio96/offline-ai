@@ -15,6 +15,10 @@ export default function ChatBtn({ title, onDelete }: props) {
 
     const [areDotsFocused, setAreDotsFocused] = useState<boolean>(false)
 
+    if (title.length > 17) {
+        title = title.slice(0, 16) + '...'
+    }
+
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
 
@@ -47,8 +51,6 @@ export default function ChatBtn({ title, onDelete }: props) {
             setIsBtnHover(false)
         }
     }, [areDotsFocused])
-
-
 
     // Deal with 3 dots button focus
     useEffect(() => {

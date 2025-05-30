@@ -1,0 +1,42 @@
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2;
+    justify-content: center;
+    align-content: center;
+}
+
+.title {
+    margin: 0;
+    margin-bottom: 1.5rem;
+}
+
+.container {
+    background-color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    z-index: 3;
+}
+
+.input {
+    font-size: large;
+    padding: 0.5rem 1rem;
+    border: #858585 1px solid;
+    border-radius: 0.5rem;
+    background-color: #3B3B3B;
+    font: inherit;
+    margin-bottom: 1.5rem;
+}
+
+.btnContainer {
+    display: flex;
+    justify-content: space-between;
+}

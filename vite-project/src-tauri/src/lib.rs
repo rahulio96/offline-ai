@@ -78,6 +78,21 @@ struct Chat {
     name: String,
 }
 
+// Just create a new chat
+#[tauri::command]
+async fn create_chat(state: tauri::State<'_, DbState>, name: String) -> Result<Chat, String> {
+    let conn = state.conn.lock().unwrap();
+    conn.execute("INSERT INTO chats (name) VALUES (?1)", params![name]).unwrap();
+    
+    // Get the last inserted chat id
+    let last_id = conn.last_insert_rowid();
+    
+    Ok(Chat {
+        id: last_id as i32,
+        name,
+    })
+}
+
 // Fetch all chats
 #[tauri::command]
 async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Chat>, String> {
@@ -242,9 +257,6 @@ pub fn run() {
         .setup(|app| {
             // Connect to db
             let conn = init_db(&app).expect("Failed to initialize DB");
-
-            // TODO: TEMPORARY JUST FOR TESTING
-            conn.execute("INSERT INTO chats (name) VALUES (?1)", params!["New Chat"]).unwrap();
             app.manage(DbState {
                 conn: Mutex::new(conn),
             });
@@ -268,6 +280,7 @@ pub fn run() {
             get_chats,
             get_messages,
             save_message,
+            create_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
 import Home from '../../icons/Home'
 import Plus from '../../icons/Plus'
 import SidebarLeft from '../../icons/SidebarLeft'
 import IconButton from '../buttons/IconButton'
 import ChatBtn from './ChatBtn'
 import style from './Sidebar.module.css'
-import { invoke } from '@tauri-apps/api/core'
 
 interface props {
     toggle: () => void
     isOpen: boolean
+    setIsOpen: (isOpen: boolean) => void
+    chatList: Chat[]
 }
 
 type Chat = {
@@ -17,21 +17,8 @@ type Chat = {
     name: string;
 }
 
-export default function Sidebar({toggle, isOpen}: props) {
-    const [chatList, setChatList] = useState<Chat[]>([]);
+export default function Sidebar({toggle, isOpen, setIsOpen, chatList}: props) {
 
-    const fetchChats = async () => {
-        setChatList([]);
-        try {
-            setChatList(await invoke('get_chats'));
-        } catch (error) {
-            console.error('Error fetching chats:', error);
-        }
-    }
-
-    useEffect(() => {
-        fetchChats();
-    }, []);
 
     // TODO: Update with db
     const onDelete = (id: number) => {
@@ -46,7 +33,7 @@ export default function Sidebar({toggle, isOpen}: props) {
                     <IconButton><Home /></IconButton>
                     <IconButton onClick={toggle}><SidebarLeft /></IconButton>
                 </div>
-                <button className={`${style.btn} ${style.new}`}>New Chat <Plus /></button>
+                <button className={`${style.btn} ${style.new}`} onClick={() => setIsOpen(true)}>New Chat <Plus /></button>
             </div>
         
             

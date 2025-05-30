@@ -7,6 +7,7 @@ import Message from './components/message/Message';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import LoadingMessage from './components/message/LoadingMessage';
+import NewChat from './components/newchat/NewChat';
 
 function App() {
 
@@ -19,6 +20,7 @@ function App() {
   const [text, setText] = useState<string>('');
   const [response, setResponse] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
 
   // Selected model from the dropdown
   const [selectedModel, setSelectedModel] = useState<string>('');
@@ -30,8 +32,8 @@ function App() {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen)
   }
-  
-  interface Message {
+
+  type Message = {
     id: number,
     chat_id: number,
     author_model: string,
@@ -56,8 +58,38 @@ function App() {
     }
   }
 
+  // Handle getting the list of chats for the sidebar
+  // We then pass it as a prop to the component
+  type Chat = {
+    id: number;
+    name: string;
+  }
+
+  const [chatList, setChatList] = useState<Chat[]>([]);
+
+  const fetchChats = async () => {
+    setChatList([]);
+    try {
+      setChatList(await invoke('get_chats'));
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  const scrollToBottom = () => {
+    const container = document.querySelector('.msgs');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }
+
   useEffect(() => {
     fetchMessages(CHAT_ID);
+    scrollToBottom();
   }, [])
 
   useEffect(() => {
@@ -73,17 +105,17 @@ function App() {
   }, []);
 
   const addResponse = async () => {
-      if (!isResponding && response) {
-        // Add the llm's response to the backend and db
-        const llmMessage: Message = await invoke('save_message', { message: response, chatId: CHAT_ID, authorModel: authorModel });
-        setMessages(prevMessages => [...prevMessages, llmMessage]);
-        setResponse('');
-      }
+    if (!isResponding && response) {
+      // Add the llm's response to the backend and db
+      const llmMessage: Message = await invoke('save_message', { message: response, chatId: CHAT_ID, authorModel: authorModel });
+      setMessages(prevMessages => [...prevMessages, llmMessage]);
+      setResponse('');
+    }
   }
 
   // When we're done streaming the input, we update the messages with the response
   useEffect(() => {
-      addResponse();
+    addResponse();
   }, [response, isResponding]);
 
   // Stop loading animation once we get anything streamed from the LLM
@@ -95,7 +127,7 @@ function App() {
 
   const handleSend = async () => {
     if (text === '' || isResponding) return;
-    
+
     if (!selectedModel) {
       alert('Please select a model first');
       return;
@@ -122,22 +154,36 @@ function App() {
     }
   }
 
-  const scrollToBottom = () => {
-    const container = document.querySelector('.msgs');
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-  }
-
   // Scroll to bottom of page if response is being streamed or when a new message is appended
   useEffect(() => {
     scrollToBottom();
   }, [messages, response]);
 
+  // Manage creating a new chat
+  const [newChatName, setNewChatName] = useState<string>('');
+
+  const createNewChat = async () => {
+    const chatName = newChatName.trim();
+    if (chatName === '') {
+      return;
+    }
+
+    try {
+      // Create a new chat in the backend and db
+      const newChat: Chat = await invoke('create_chat', { name: chatName });
+      setChatList(prevChats => [newChat, ...prevChats]);
+      setNewChatName('');
+      setIsPopupOpen(false);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    }
+  }
+
   return (
     <div className="container">
+      {isPopupOpen && <NewChat onSave={createNewChat} onCancel={() => setIsPopupOpen(false)} value={newChatName} setValue={setNewChatName} />};
       <Header isOpen={isSidebarOpen} toggle={toggleSidebar} setSelectedModel={setSelectedModel} />
-      <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} />
+      <Sidebar isOpen={isSidebarOpen} toggle={toggleSidebar} setIsOpen={setIsPopupOpen} chatList={chatList} />
       <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
         {messages.map((msg, i) =>
           <Message key={i} text={msg.content} isUser={msg.author_model ? false : true} authorModel={msg.author_model} />
