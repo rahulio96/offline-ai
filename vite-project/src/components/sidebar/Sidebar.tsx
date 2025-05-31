@@ -13,6 +13,7 @@ interface props {
     setIsOpen: (isOpen: boolean) => void;
     chatList: Chat[];
     setChatList: (chatList: Chat[]) => void;
+    chatId: number;
 }
 
 type Chat = {
@@ -20,7 +21,7 @@ type Chat = {
     name: string;
 }
 
-export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatList }: props) {
+export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatList, chatId }: props) {
 
     const onDelete = async (id: number) => {
         await invoke('delete_chat', { chatId: id });
@@ -50,6 +51,7 @@ export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatLi
                             id={chat.id}
                             onDelete={() => onDelete(chat.id)}
                             title={chat.name}
+                            isFocused={chatId === chat.id}
                         />
                     ))}
                 </div>

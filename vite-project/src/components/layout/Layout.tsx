@@ -3,7 +3,7 @@ import Header from "../header/Header";
 import NewChat from "../newchat/NewChat";
 import Sidebar from "../sidebar/Sidebar";
 import { invoke } from "@tauri-apps/api/core";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 // TODO: Change this later
 import '../../App.css';
@@ -19,6 +19,9 @@ export default function Layout() {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+
+    const params = useParams();
+    const chatId = params.id ? Number(params.id) : -1;
 
     // Selected model from the dropdown
     const [selectedModel, setSelectedModel] = useState<string>('');
@@ -46,6 +49,8 @@ export default function Layout() {
     // Manage creating a new chat
     const [newChatName, setNewChatName] = useState<string>('');
 
+    const navigate = useNavigate();
+
     const createNewChat = async () => {
         const chatName = newChatName.trim();
         if (chatName === '') {
@@ -58,6 +63,7 @@ export default function Layout() {
             setChatList(prevChats => [newChat, ...prevChats]);
             setNewChatName('');
             setIsPopupOpen(false);
+            navigate(`/chats/${newChat.id}`);
         } catch (error) {
             console.error('Error creating new chat:', error);
         }
@@ -84,7 +90,8 @@ export default function Layout() {
                 toggle={toggleSidebar}
                 setIsOpen={setIsPopupOpen}
                 chatList={chatList}
-                setChatList={setChatList} 
+                setChatList={setChatList}
+                chatId={chatId}
             />
 
             <Outlet context={{ isSidebarOpen, selectedModel }} />

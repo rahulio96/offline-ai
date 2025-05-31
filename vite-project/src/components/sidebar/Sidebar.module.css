@@ -74,8 +74,7 @@
     font-weight: 400;
 }
 
-.chat:focus,
-.chat:focus-visible {
+.chatFocus {
     background-color: #292929;
     outline: none;
 }

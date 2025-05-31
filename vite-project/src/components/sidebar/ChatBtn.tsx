@@ -8,9 +8,10 @@ interface props {
     id: number;
     title: string;
     onDelete: () => void;
+    isFocused: boolean;
 }
 
-export default function ChatBtn({ id, title, onDelete }: props) {
+export default function ChatBtn({ id, title, onDelete, isFocused }: props) {
     const [isDotHover, setIsDotHover] = useState<boolean>(false);
     const [isBtnHover, setIsBtnHover] = useState<boolean>(false);
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
@@ -82,13 +83,12 @@ export default function ChatBtn({ id, title, onDelete }: props) {
     const navigate = useNavigate();
 
     const selectChat = () => {
-        console.log(`Selected chat with id: ${id}`);
         navigate(`/chats/${id}`);
     }
 
     return (
         <button
-            className={`${style.btn} ${style.chat}`}
+            className={`${style.btn} ${style.chat} ${isFocused && style.chatFocus}`}
             ref={btnRef}
             onMouseEnter={toggleBtnHover}
             onMouseLeave={toggleBtnHover}
