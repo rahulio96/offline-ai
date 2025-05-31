@@ -10,6 +10,7 @@ import { useParams } from 'react-router-dom';
 // TODO:
 // What do we do if the user changes chats while the llm is responding?
 // Need to reset all useState variables whenever the chatId changes since components aren't unmounted
+// Finish home page handleSend (let user type, then send msg, then create a chat, then send to backend)
 
 // TODO: Change this later
 import '../../App.css';
@@ -40,6 +41,10 @@ export default function ChatPage() {
     const [text, setText] = useState<string>('');
     const [response, setResponse] = useState<string>('');
 
+    // We need this since the user could change selected model while the llm is responding
+    // So we use this to immediately set the author model to the selected model
+    const [authorModel, setAuthorModel] = useState<string>('');
+
     // How messages work:
     // We have a messages array with all the messages that have been sent (user and llm)
     // When user sends message, it's appended to array
@@ -50,7 +55,6 @@ export default function ChatPage() {
     const fetchMessages = async (chatId: number) => {
         try {
             const msgs: Message[] = await invoke('get_messages', { chatId: chatId });
-            console.log(JSON.stringify(msgs));
             setMessages(msgs);
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -64,14 +68,20 @@ export default function ChatPage() {
         }
     }
 
+    // Fetch messages when chatId changes!!!
+    // Also reset state variables here
     useEffect(() => {
-        fetchMessages(chatId);
-        scrollToBottom();
-    }, [chatId])
+        setMessages([]);
+        setIsResponding(false);
+        setIsLoading(false);
+        setResponse('');
+        setAuthorModel('');
 
-    // We need this since the user could change selected model while the llm is responding
-    // So we use this to immediately set the author model to the selected model
-    const [authorModel, setAuthorModel] = useState<string>('');
+        fetchMessages(chatId);
+        requestAnimationFrame(() => {
+            scrollToBottom();
+        });
+    }, [chatId])
 
     useEffect(() => {
         // Listen for stream message from backend
