@@ -2,16 +2,15 @@ import { useState, useRef, useEffect } from 'react'
 import Dots from '../../icons/Dots'
 import style from './Sidebar.module.css'
 import Trash from '../../icons/Trash'
-import { useNavigate } from 'react-router-dom'
 
 interface props {
-    id: number;
     title: string;
     onDelete: () => void;
     isFocused: boolean;
+    navigateToChat: () => void;
 }
 
-export default function ChatBtn({ id, title, onDelete, isFocused }: props) {
+export default function ChatBtn({ title, onDelete, isFocused, navigateToChat }: props) {
     const [isDotHover, setIsDotHover] = useState<boolean>(false);
     const [isBtnHover, setIsBtnHover] = useState<boolean>(false);
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
@@ -80,19 +79,13 @@ export default function ChatBtn({ id, title, onDelete, isFocused }: props) {
         }
     }, [isBtnHover])
 
-    const navigate = useNavigate();
-
-    const selectChat = () => {
-        navigate(`/chats/${id}`);
-    }
-
     return (
         <button
             className={`${style.btn} ${style.chat} ${isFocused && style.chatFocus}`}
             ref={btnRef}
             onMouseEnter={toggleBtnHover}
             onMouseLeave={toggleBtnHover}
-            onClick={selectChat}
+            onClick={navigateToChat}
         >
             {title}
             <div className={style.dots} onMouseEnter={toggleDotHover} onMouseLeave={toggleDotHover} onClick={openPopup}>

@@ -13,6 +13,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use rusqlite::{Connection, Result};
 use serde::Serialize;
+use tokio_util::sync::CancellationToken;
 
 #[tauri::command]
 // Get the list of models from ollama
@@ -66,6 +67,11 @@ fn init_db(app: &App) -> Result<Connection> {
 // Global variable that holds messages for the current chat
 lazy_static::lazy_static! {
   static ref MESSAGES: tokio::sync::Mutex<Vec<ChatMessage>> = tokio::sync::Mutex::new(vec![]);
+}
+
+// Cancellation token for chat response streaming
+lazy_static::lazy_static! {
+    static ref CANCEL_TOKEN: Mutex<Option<CancellationToken>> = Mutex::new(None);
 }
 
 #[derive(Serialize)]
@@ -234,6 +240,13 @@ async fn chat_response(window: Window, model_name: String) -> Result<(), String>
     let model = model_name.to_string();
     let messages = MESSAGES.lock().await;
 
+    let token = CancellationToken::new();
+    {
+        // Use guard to access global variable, just like with messages array
+        let mut guard = CANCEL_TOKEN.lock().unwrap();
+        *guard = Some(token.clone());
+    }
+
     // Response stream from LLM
     let mut stream: ChatMessageResponseStream = ollama
         .send_chat_messages_stream(ChatMessageRequest::new(model, messages.clone()))
@@ -243,7 +256,17 @@ async fn chat_response(window: Window, model_name: String) -> Result<(), String>
     // This variable stores the complete response from the stream
     let mut llm_response = String::new();
 
-    while let Some(res) = stream.next().await {
+    while let Some(res) = tokio::select! {
+
+        _ = token.cancelled() => {
+            // Cancelled stream
+            return Ok(());
+        }
+
+        next = stream.next() => next
+    }
+    
+    {
         let partial_response = res.unwrap().message.content;
 
         // Send partial response from the stream to the frontend
@@ -253,6 +276,17 @@ async fn chat_response(window: Window, model_name: String) -> Result<(), String>
         llm_response += partial_response.as_str();
     }
 
+    Ok(())
+}
+
+#[tauri::command]
+// If the user cancels the response or switches to another chat, cancel the stream
+fn cancel_chat_response() -> Result<(), String> {
+    // Cancel the chat response stream
+    let mut guard = CANCEL_TOKEN.lock().unwrap();
+    if let Some(token) = guard.take() {
+        token.cancel();
+    }
     Ok(())
 }
 
@@ -286,6 +320,7 @@ pub fn run() {
         // API commands
         .invoke_handler(tauri::generate_handler![
             chat_response,
+            cancel_chat_response,
             get_models,
             get_chats,
             get_messages,

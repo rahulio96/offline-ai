@@ -14,6 +14,9 @@ interface props {
     chatList: Chat[];
     setChatList: (chatList: Chat[]) => void;
     chatId: number;
+    isResponding: boolean;
+    setIsConfirmOpen: (isOpen: boolean) => void;
+    setNavId: (id: number) => void;
 }
 
 type Chat = {
@@ -21,7 +24,17 @@ type Chat = {
     name: string;
 }
 
-export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatList, chatId }: props) {
+export default function Sidebar({
+    toggle,
+    isOpen,
+    setIsOpen,
+    chatList,
+    setChatList,
+    chatId,
+    isResponding,
+    setIsConfirmOpen,
+    setNavId
+ }: props) {
 
     const onDelete = async (id: number) => {
         await invoke('delete_chat', { chatId: id });
@@ -30,6 +43,15 @@ export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatLi
     }
 
     const navigate = useNavigate();
+
+    const navigateToChat = (id: number) => {
+        setNavId(id);
+        if (isResponding) {
+            setIsConfirmOpen(true);
+        } else {
+            navigate(`/chats/${id}`);
+        }
+    }
 
     return (
         <div className={`${style.container} ${isOpen ? style.open : style.close}`}>
@@ -48,10 +70,10 @@ export default function Sidebar({ toggle, isOpen, setIsOpen, chatList, setChatLi
                     {chatList.map((chat) => (
                         <ChatBtn
                             key={chat.id}
-                            id={chat.id}
                             onDelete={() => onDelete(chat.id)}
                             title={chat.name}
                             isFocused={chatId === chat.id}
+                            navigateToChat={() => navigateToChat(chat.id)}
                         />
                     ))}
                 </div>

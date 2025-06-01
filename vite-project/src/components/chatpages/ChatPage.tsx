@@ -8,8 +8,11 @@ import { listen } from "@tauri-apps/api/event";
 import { useParams } from 'react-router-dom';
 
 // TODO:
-// What do we do if the user changes chats while the llm is responding?
-// Need to reset all useState variables whenever the chatId changes since components aren't unmounted
+// If the user changes chats, need to stop user's message from going to the backend
+// - Add a temp user message to frontend array (might need to do it for backend as well)
+// - Once llm responds:
+//      - Remove the temp user messsge (pop)
+//      - Add both the user and llm's response to the messages array
 // Finish home page handleSend (let user type, then send msg, then create a chat, then send to backend)
 
 // TODO: Change this later
@@ -19,6 +22,8 @@ type OutletContextType = {
     chatId: number;
     isSidebarOpen: boolean;
     selectedModel: string;
+    isResponding: boolean;
+    setIsResponding: (isResponding: boolean) => void;
 }
 
 type Message = {
@@ -33,10 +38,9 @@ export default function ChatPage() {
 
     const params = useParams();
     const chatId = params.id ? Number(params.id) : 0;
-    const { isSidebarOpen, selectedModel } = useOutletContext<OutletContextType>();
+    const { isSidebarOpen, selectedModel, isResponding, setIsResponding } = useOutletContext<OutletContextType>();
     
     const [messages, setMessages] = useState<Message[]>([]);
-    const [isResponding, setIsResponding] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [text, setText] = useState<string>('');
     const [response, setResponse] = useState<string>('');
@@ -71,17 +75,17 @@ export default function ChatPage() {
     // Fetch messages when chatId changes!!!
     // Also reset state variables here
     useEffect(() => {
+        invoke('cancel_chat_response');
         setMessages([]);
         setIsResponding(false);
         setIsLoading(false);
         setResponse('');
         setAuthorModel('');
-
         fetchMessages(chatId);
         requestAnimationFrame(() => {
             scrollToBottom();
         });
-    }, [chatId])
+    }, [chatId]);
 
     useEffect(() => {
         // Listen for stream message from backend

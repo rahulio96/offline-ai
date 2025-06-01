@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import Header from "../header/Header";
-import NewChat from "../newchat/NewChat";
+import NewChat from "../popups/NewChat";
 import Sidebar from "../sidebar/Sidebar";
 import { invoke } from "@tauri-apps/api/core";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 // TODO: Change this later
 import '../../App.css';
+import ConfirmNavigate from "../popups/ConfirmNavigate";
 
 // Handle getting the list of chats for the sidebar
 // We then pass it as a prop to the component
@@ -19,6 +20,10 @@ export default function Layout() {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+
+    const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
+    const [isResponding, setIsResponding] = useState<boolean>(false);
+    const [navId, setNavId] = useState<number>(-1);
 
     const params = useParams();
     const chatId = params.id ? Number(params.id) : -1;
@@ -69,6 +74,12 @@ export default function Layout() {
         }
     }
 
+    const handleNavigate = (id: number) => {
+        navigate(`/chats/${id}`);
+        setIsConfirmOpen(false);
+        setNavId(-1);
+    }
+
     return (
         <div className="container">
             {isPopupOpen && 
@@ -77,6 +88,12 @@ export default function Layout() {
                     onCancel={() => setIsPopupOpen(false)}
                     value={newChatName}
                     setValue={setNewChatName} 
+                />}
+
+            {isConfirmOpen &&
+                <ConfirmNavigate 
+                    onYes={() => handleNavigate(navId)}
+                    onNo={() => setIsConfirmOpen(false)}
                 />}
 
             <Header
@@ -92,9 +109,12 @@ export default function Layout() {
                 chatList={chatList}
                 setChatList={setChatList}
                 chatId={chatId}
+                isResponding={isResponding}
+                setIsConfirmOpen={setIsConfirmOpen}
+                setNavId={setNavId}
             />
 
-            <Outlet context={{ isSidebarOpen, selectedModel }} />
+            <Outlet context={{ isSidebarOpen, selectedModel, isResponding, setIsResponding }} />
         </div>
     );
 }

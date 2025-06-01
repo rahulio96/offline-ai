@@ -40,3 +40,8 @@
     display: flex;
     justify-content: space-between;
 }
+
+.text {
+    margin: 0;
+    margin-bottom: 1rem;
+}
