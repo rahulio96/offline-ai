@@ -1,4 +1,5 @@
 import Send from '../../icons/Send';
+import Stop from '../../icons/Stop';
 import IconButton from '../buttons/IconButton';
 import style from './Input.module.css'
 
@@ -6,9 +7,10 @@ interface InputProps {
     text: string;
     setText: (text: string) => void;
     handleSend: () => void;
+    isResponding?: boolean;
 }
 
-const Input = ({text, setText, handleSend}: InputProps) => {
+const Input = ({text, setText, handleSend, isResponding}: InputProps) => {
 
     return (
         <div className={style.container}>
@@ -18,7 +20,7 @@ const Input = ({text, setText, handleSend}: InputProps) => {
                 value={text}
                 onChange={(e) => { setText(e.target.value) }}
             />
-            <IconButton onClick={handleSend}><Send/></IconButton>
+            <IconButton onClick={handleSend}>{isResponding ? <Stop /> : <Send/>}</IconButton>
         </div>
     )
 }

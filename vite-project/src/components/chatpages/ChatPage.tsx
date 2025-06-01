@@ -125,7 +125,14 @@ export default function ChatPage() {
     }, [response, chatId]);
 
     const handleSend = async () => {
-        if (text === '' || isResponding) return;
+        if (isResponding) {
+            await invoke('cancel_chat_response');
+            setIsLoading(false);
+            setIsResponding(false);
+            return;
+        }
+
+        if (text === '') return;
 
         if (!selectedModel) {
             alert('Please select a model first');
@@ -177,7 +184,12 @@ export default function ChatPage() {
             </div>
 
             <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
-                <Input text={text} setText={setText} handleSend={handleSend} />
+                <Input
+                    text={text}
+                    setText={setText}
+                    handleSend={handleSend}
+                    isResponding={isResponding}
+                />
             </div>
         </>
     );
