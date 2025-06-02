@@ -195,8 +195,11 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
     let mut messages = MESSAGES.lock().await;
 
     // Format user message and add to history
-    let user_message = ChatMessage::user(message.to_string());
-    let user_json_content = serde_json::to_string(&user_message).unwrap();
+    let mut ollama_message = ChatMessage::user(message.to_string());
+    if author_model.is_some() {
+        ollama_message = ChatMessage::assistant(message.to_string());
+    }
+    let user_json_content = serde_json::to_string(&ollama_message).unwrap();
 
     let row;
 
@@ -228,7 +231,7 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
         }).unwrap();
     }
 
-    messages.push(user_message);
+    messages.push(ollama_message);
 
     Ok(row)
 }
