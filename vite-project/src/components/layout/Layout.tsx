@@ -135,7 +135,8 @@ export default function Layout() {
                 homePageModel,
                 setHomePageModel,
                 chatText,
-                setChatText
+                setChatText,
+                setIsConfirmOpen,
             }}/>
         </div>
     );

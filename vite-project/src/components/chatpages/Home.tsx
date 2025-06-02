@@ -16,6 +16,7 @@ type OutletContextType = {
     setHomePageModel: (model: string) => void;
     chatText: string;
     setChatText: (chatText: string) => void;
+    setIsConfirmOpen: (isConfirmOpen: boolean) => void;
 }
 
 export default function Home() {

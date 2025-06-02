@@ -29,6 +29,7 @@ type OutletContextType = {
     setHomePageModel: (model: string) => void;
     chatText: string;
     setChatText: (chatText: string) => void;
+    setIsConfirmOpen: (isConfirmOpen: boolean) => void;
 }
 
 type Message = {
@@ -53,6 +54,7 @@ export default function ChatPage() {
         chatText,
         setChatText,
         homePageModel,
+        setIsConfirmOpen,
      } = useOutletContext<OutletContextType>();
     
     const [messages, setMessages] = useState<Message[]>([]);
@@ -110,6 +112,7 @@ export default function ChatPage() {
             console.error('Error with reponse: ', error);
         } finally {
             setIsResponding(false); // We're done streaming the llm's response
+            setIsConfirmOpen(false);
         }
     }
 
@@ -203,6 +206,7 @@ export default function ChatPage() {
             console.error('Error with reponse: ', error);
         } finally {
             setIsResponding(false); // We're done streaming the llm's response
+            setIsConfirmOpen(false);
         }
     }
 
