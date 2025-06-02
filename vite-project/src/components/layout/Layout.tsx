@@ -80,6 +80,16 @@ export default function Layout() {
         setNavId(-1);
     }
 
+    // Use this for special logic for when sending msg from home page
+    // So when we hit send, and it creates and routes to a new chat, we'll auto-send the message
+    // they initially typed in the home page
+    const [sentFromHome, setSentFromHome] = useState<boolean>(false);
+
+    // We need to lock the model the user selected when initially sending the message
+    // So that if the user changes the model while the llm is responding, we still use the initial model
+    const [homePageModel, setHomePageModel] = useState<string>('');
+    const [chatText, setChatText] = useState<string>('');
+
     return (
         <div className="container">
             {isPopupOpen && 
@@ -114,7 +124,19 @@ export default function Layout() {
                 setNavId={setNavId}
             />
 
-            <Outlet context={{ isSidebarOpen, selectedModel, isResponding, setIsResponding }} />
+            <Outlet context={{ 
+                isSidebarOpen,
+                selectedModel,
+                isResponding,
+                setIsResponding, 
+                setIsPopupOpen,
+                sentFromHome,
+                setSentFromHome,
+                homePageModel,
+                setHomePageModel,
+                chatText,
+                setChatText
+            }}/>
         </div>
     );
 }

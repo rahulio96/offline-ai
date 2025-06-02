@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Input from "../input/Input";
 import Message from "../message/Message";
 import { useOutletContext } from 'react-router-dom';
@@ -13,17 +13,22 @@ import { useParams } from 'react-router-dom';
 // - Once llm responds:
 //      - Remove the temp user messsge (pop)
 //      - Add both the user and llm's response to the messages array
-// Finish home page handleSend (let user type, then send msg, then create a chat, then send to backend)
 
 // TODO: Change this later
 import '../../App.css';
 
 type OutletContextType = {
-    chatId: number;
     isSidebarOpen: boolean;
     selectedModel: string;
     isResponding: boolean;
     setIsResponding: (isResponding: boolean) => void;
+    setIsPopupOpen: (isPopupOpen: boolean) => void;
+    sentFromHome: boolean;
+    setSentFromHome: (sentFromHome: boolean) => void;
+    homePageModel: string;
+    setHomePageModel: (model: string) => void;
+    chatText: string;
+    setChatText: (chatText: string) => void;
 }
 
 type Message = {
@@ -38,11 +43,20 @@ export default function ChatPage() {
 
     const params = useParams();
     const chatId = params.id ? Number(params.id) : 0;
-    const { isSidebarOpen, selectedModel, isResponding, setIsResponding } = useOutletContext<OutletContextType>();
+    const { 
+        isSidebarOpen,
+        selectedModel,
+        isResponding,
+        setIsResponding,
+        sentFromHome,
+        setSentFromHome,
+        chatText,
+        setChatText,
+        homePageModel,
+     } = useOutletContext<OutletContextType>();
     
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [text, setText] = useState<string>('');
     const [response, setResponse] = useState<string>('');
 
     // We need this since the user could change selected model while the llm is responding
@@ -72,6 +86,33 @@ export default function ChatPage() {
         }
     }
 
+    // Important: Use a ref to avoid re-render and sending the message twice
+    const sentFromHomeRef = useRef(sentFromHome);
+
+    /* SPECIAL LOGIC FOR HOME PAGE SEND */
+    const handleSendFromHome = async () => {
+        const modelName = homePageModel;
+        sentFromHomeRef.current = false;
+
+        // Add the user's message to the backend and db
+        const userMessage: Message = await invoke('save_message', { message: chatText, chatId: chatId });
+        setMessages(prevMessages => [...prevMessages, userMessage]);
+
+        setIsResponding(true);
+        setIsLoading(true);
+
+        try {
+            setChatText('');
+            setAuthorModel(modelName);
+            await invoke('chat_response', { userMessage: chatText, modelName: modelName, chatId: chatId });
+        } catch (error) {
+            setIsLoading(false);
+            console.error('Error with reponse: ', error);
+        } finally {
+            setIsResponding(false); // We're done streaming the llm's response
+        }
+    }
+
     // Fetch messages when chatId changes!!!
     // Also reset state variables here
     useEffect(() => {
@@ -85,6 +126,11 @@ export default function ChatPage() {
         requestAnimationFrame(() => {
             scrollToBottom();
         });
+
+        if (sentFromHomeRef.current) {
+            handleSendFromHome();
+            setSentFromHome(false);
+        }
     }, [chatId]);
 
     useEffect(() => {
@@ -132,7 +178,7 @@ export default function ChatPage() {
             return;
         }
 
-        if (text === '') return;
+        if (chatText === '') return;
 
         if (!selectedModel) {
             alert('Please select a model first');
@@ -142,16 +188,16 @@ export default function ChatPage() {
         const modelName = selectedModel;
 
         // Add the user's message to the backend and db
-        const userMessage: Message = await invoke('save_message', { message: text, chatId: chatId });
+        const userMessage: Message = await invoke('save_message', { message: chatText, chatId: chatId });
         setMessages(prevMessages => [...prevMessages, userMessage]);
 
         setIsResponding(true);
         setIsLoading(true);
 
         try {
-            setText('');
+            setChatText('');
             setAuthorModel(modelName);
-            await invoke('chat_response', { userMessage: text, modelName: modelName, chatId: chatId });
+            await invoke('chat_response', { userMessage: chatText, modelName: modelName, chatId: chatId });
         } catch (error) {
             setIsLoading(false);
             console.error('Error with reponse: ', error);
@@ -185,8 +231,8 @@ export default function ChatPage() {
 
             <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
                 <Input
-                    text={text}
-                    setText={setText}
+                    text={chatText}
+                    setText={setChatText}
                     handleSend={handleSend}
                     isResponding={isResponding}
                 />

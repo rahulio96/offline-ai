@@ -1,27 +1,44 @@
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import Input from "../input/Input";
-import { useState } from "react";
 
 // TODO: Change this later
 import '../../App.css';
 
 type OutletContextType = {
-    chatId: number;
     isSidebarOpen: boolean;
     selectedModel: string;
-    chatText?: string;
+    isResponding: boolean;
+    setIsResponding: (isResponding: boolean) => void;
+    setIsPopupOpen: (isPopupOpen: boolean) => void;
+    sentFromHome: boolean;
+    setSentFromHome: (sentFromHome: boolean) => void;
+    homePageModel: string;
+    setHomePageModel: (model: string) => void;
+    chatText: string;
+    setChatText: (chatText: string) => void;
 }
 
 export default function Home() {
-    const { isSidebarOpen, selectedModel } = useOutletContext<OutletContextType>();
-    const [text, setText] = useState<string>('');
+    const { 
+        isSidebarOpen,
+        selectedModel,
+        setIsPopupOpen,
+        setSentFromHome,
+        setHomePageModel,
+        chatText,
+        setChatText
+    } = useOutletContext<OutletContextType>();
 
-    const navigate = useNavigate();
-
-    // TODO: Change later to create a new chat then naviagte to it and send msg
     const handleSend = async () => {
-        navigate("/");
-        console.log(`Home scren send clicked ${selectedModel}`);
+        if (chatText.trim() === '') return;
+
+        if (!selectedModel) {
+            alert('Please select a model first');
+            return;
+        }
+        setHomePageModel(selectedModel);
+        setSentFromHome(true);
+        setIsPopupOpen(true);
     }
     
     return (
@@ -30,7 +47,7 @@ export default function Home() {
                 <h1>HOME</h1>
             </div>
             <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
-                <Input text={text} setText={setText} handleSend={handleSend} />
+                <Input text={chatText} setText={setChatText} handleSend={handleSend} />
             </div>
         </>
     );
