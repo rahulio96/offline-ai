@@ -31,7 +31,7 @@ async fn get_models() -> Vec<String> {
 // Initialize SQLite database
 fn init_db(app: &App) -> Result<Connection> {
 
-    // Create db file in app data directory (AppData/Roaming/com.tauri.com/llm.db)
+    // Create db file in app data directory (AppData/Roaming/offline-ai/history.db)
     let path = app.path().app_data_dir().expect("Failed to get app data dir").join("history.db");
 
     // Create directory if it doesn't exist

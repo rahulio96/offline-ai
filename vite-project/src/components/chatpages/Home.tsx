@@ -45,8 +45,8 @@ export default function Home() {
     return (
         <>
             <div className={"msgs home " + (isSidebarOpen ? "open" : "close")}>
-                <p>👋 Welcome to the Ollama Desktop UI.</p>
-                <p>Select an AI model, type below, and get started!</p>
+                <p>👋 Welcome to Offline AI.</p>
+                <p>🚀 Select an AI model, type below, and get started!</p>
             </div>
             <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
                 <Input text={chatText} setText={setChatText} handleSend={handleSend} />
