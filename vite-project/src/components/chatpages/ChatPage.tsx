@@ -8,11 +8,11 @@ import { listen } from "@tauri-apps/api/event";
 import { useParams } from 'react-router-dom';
 
 // TODO:
-// If the user changes chats, need to stop user's message from going to the backend
-// - Add a temp user message to frontend array (might need to do it for backend as well)
-// - Once llm responds:
-//      - Remove the temp user messsge (pop)
-//      - Add both the user and llm's response to the messages array
+// - Add delete message functionality (should delete all subsequent messages too)
+// - Need to figure out how to store longer conversations, I can't just store the entire thing in an array
+// - There's also a bug where if ollama is open prior to opening the app, and the user tries to send
+// a message from the home page, it loads infinitely (this issue doesn't happen if ollama is closed before opening the app)
+// - Update App.css, see below
 
 // TODO: Change this later
 import '../../App.css';
@@ -173,15 +173,17 @@ export default function ChatPage() {
         }
     }, [response, chatId]);
 
-    const handleSend = async () => {
+    const handleStop = async () => {
         if (isResponding) {
             await invoke('cancel_chat_response');
             setIsLoading(false);
             setIsResponding(false);
             return;
         }
+    }
 
-        if (chatText === '') return;
+    const handleSend = async () => {
+        if (chatText === '' || isResponding) return;
 
         if (!selectedModel) {
             alert('Please select a model first');
@@ -238,6 +240,7 @@ export default function ChatPage() {
                     text={chatText}
                     setText={setChatText}
                     handleSend={handleSend}
+                    handleStop={handleStop}
                     isResponding={isResponding}
                 />
             </div>

@@ -49,7 +49,12 @@ export default function Home() {
                 <p>🚀 Select an AI model, type below, and get started!</p>
             </div>
             <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
-                <Input text={chatText} setText={setChatText} handleSend={handleSend} />
+                <Input
+                    text={chatText}
+                    setText={setChatText}
+                    handleSend={handleSend}
+                    handleStop={() => {}}
+                />
             </div>
         </>
     );

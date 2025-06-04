@@ -7,10 +7,11 @@ interface InputProps {
     text: string;
     setText: (text: string) => void;
     handleSend: () => void;
+    handleStop: () => void;
     isResponding?: boolean;
 }
 
-const Input = ({text, setText, handleSend, isResponding}: InputProps) => {
+const Input = ({ text, setText, handleSend, handleStop, isResponding }: InputProps) => {
 
     return (
         <div className={style.container}>
@@ -19,8 +20,19 @@ const Input = ({text, setText, handleSend, isResponding}: InputProps) => {
                 placeholder='Type here'
                 value={text}
                 onChange={(e) => { setText(e.target.value) }}
+
+                // Trigger send on Enter
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        // Stop newline
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }}
             />
-            <IconButton onClick={handleSend}>{isResponding ? <Stop /> : <Send/>}</IconButton>
+            <IconButton onClick={isResponding ? handleStop : handleSend}>
+                {isResponding ? <Stop /> : <Send />}
+            </IconButton>
         </div>
     )
 }

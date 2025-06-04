@@ -10,19 +10,32 @@ interface props {
     setValue: (name: string) => void;
 }
 
-const NewChat = ({onSave, onCancel, value, setValue}: props) => {
+const NewChat = ({ onSave, onCancel, value, setValue }: props) => {
     return (
         <div className={style.background}>
             <div className={style.container}>
                 <h2 className={style.title}>New Chat</h2>
-                <input className={style.input} type="text" placeholder="Enter chat name" value={value} onChange={(e) => {setValue(e.target.value)}} />
+                <input
+                    className={style.input}
+                    type="text"
+                    placeholder="Enter chat name"
+                    value={value}
+                    onChange={(e) => { setValue(e.target.value) }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            // Stop newline
+                            e.preventDefault();
+                            onSave();
+                        }
+                    }}
+                />
 
                 <div className={style.btnContainer}>
                     {/* Save name */}
-                    <IconButton onClick={onSave}><Check color="white"/></IconButton>
+                    <IconButton onClick={onSave}><Check color="white" /></IconButton>
 
                     {/* Cancel */}
-                    <IconButton onClick={onCancel}><Close color="white"/></IconButton>
+                    <IconButton onClick={onCancel}><Close color="white" /></IconButton>
                 </div>
             </div>
         </div>
