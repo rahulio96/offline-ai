@@ -6,16 +6,13 @@ import LoadingMessage from "../message/LoadingMessage";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useParams } from 'react-router-dom';
+import style from './Chat.module.css';
 
 // TODO:
 // - Add delete message functionality (should delete all subsequent messages too)
 // - Need to figure out how to store longer conversations, I can't just store the entire thing in an array
 // - There's also a bug where if ollama is open prior to opening the app, and the user tries to send
 // a message from the home page, it loads infinitely (this issue doesn't happen if ollama is closed before opening the app)
-// - Update App.css, see below
-
-// TODO: Change this later
-import '../../App.css';
 
 type OutletContextType = {
     isSidebarOpen: boolean;
@@ -219,7 +216,7 @@ export default function ChatPage() {
 
     return (
         <>
-            <div className={"msgs " + (isSidebarOpen ? "open" : "close")}>
+            <div className={`${style.msgs} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}>
                 {messages.map((msg) =>
                     <Message
                         key={msg.id}
@@ -235,7 +232,7 @@ export default function ChatPage() {
                 {isResponding && <Message text={response} isUser={false} />}
             </div>
 
-            <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
+            <div className={`${style.inner} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}>
                 <Input
                     text={chatText}
                     setText={setChatText}

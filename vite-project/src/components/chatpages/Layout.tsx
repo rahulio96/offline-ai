@@ -4,10 +4,8 @@ import NewChat from "../popups/NewChat";
 import Sidebar from "../sidebar/Sidebar";
 import { invoke } from "@tauri-apps/api/core";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
-
-// TODO: Change this later
-import '../../App.css';
 import ConfirmNavigate from "../popups/ConfirmNavigate";
+import style from './Chat.module.css';
 
 // Handle getting the list of chats for the sidebar
 // We then pass it as a prop to the component
@@ -91,17 +89,17 @@ export default function Layout() {
     const [chatText, setChatText] = useState<string>('');
 
     return (
-        <div className="container">
-            {isPopupOpen && 
+        <div className={`${style.container}`}>
+            {isPopupOpen &&
                 <NewChat
                     onSave={createNewChat}
                     onCancel={() => setIsPopupOpen(false)}
                     value={newChatName}
-                    setValue={setNewChatName} 
+                    setValue={setNewChatName}
                 />}
 
             {isConfirmOpen &&
-                <ConfirmNavigate 
+                <ConfirmNavigate
                     onYes={() => handleNavigate(navId)}
                     onNo={() => setIsConfirmOpen(false)}
                 />}
@@ -124,11 +122,11 @@ export default function Layout() {
                 setNavId={setNavId}
             />
 
-            <Outlet context={{ 
+            <Outlet context={{
                 isSidebarOpen,
                 selectedModel,
                 isResponding,
-                setIsResponding, 
+                setIsResponding,
                 setIsPopupOpen,
                 sentFromHome,
                 setSentFromHome,
@@ -137,7 +135,7 @@ export default function Layout() {
                 chatText,
                 setChatText,
                 setIsConfirmOpen,
-            }}/>
+            }} />
         </div>
     );
 }

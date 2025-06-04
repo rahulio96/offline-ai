@@ -1,6 +1,5 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
-import './App.css';
-import Layout from './components/layout/Layout';
+import Layout from './components/chatpages/Layout';
 import Home from './components/chatpages/Home';
 import ChatPage from './components/chatpages/ChatPage';
 

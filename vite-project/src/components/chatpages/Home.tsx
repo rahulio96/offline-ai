@@ -1,8 +1,6 @@
 import { useOutletContext } from "react-router-dom";
 import Input from "../input/Input";
-
-// TODO: Change this later
-import '../../App.css';
+import style from './Chat.module.css';
 
 type OutletContextType = {
     isSidebarOpen: boolean;
@@ -20,7 +18,7 @@ type OutletContextType = {
 }
 
 export default function Home() {
-    const { 
+    const {
         isSidebarOpen,
         selectedModel,
         setIsPopupOpen,
@@ -41,19 +39,19 @@ export default function Home() {
         setSentFromHome(true);
         setIsPopupOpen(true);
     }
-    
+
     return (
         <>
-            <div className={"msgs home " + (isSidebarOpen ? "open" : "close")}>
+            <div className={`${style.home} ${style.msgs} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}>
                 <p>👋 Welcome to Offline AI.</p>
                 <p>🚀 Select an AI model, type below, and get started!</p>
             </div>
-            <div className={"inner " + (isSidebarOpen ? "open" : "close")}>
+            <div className={`${style.inner} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}>
                 <Input
                     text={chatText}
                     setText={setChatText}
                     handleSend={handleSend}
-                    handleStop={() => {}}
+                    handleStop={() => { }}
                 />
             </div>
         </>
