@@ -41,10 +41,6 @@
     justify-self:right;
 }
 
-.gap {
-    height: 1.97rem;
-}
-
 .fade {
   opacity: 0;
   transition: 0.3s ease;

@@ -83,16 +83,13 @@ const Message = ({ text, isUser, authorModel }: MessageProps) => {
           {displayText}
         </ReactMarkdown>
       </div>
-
-      {isHovered ? 
-        <div className={`
-          ${style.btn} ${isUser ? style.userbtn : ''}`
-        }>
+ 
+      <div className={`
+          ${style.btn} ${isUser ? style.userbtn : ''}
+          ${style.fade} ${isHovered ? style.show : ''}
+      `}>
           <IconButton><Trash /></IconButton>
-        </div>
-        : 
-        <div className={`${style.gap}`} />
-      }
+      </div>
     </div>
   )
 }
