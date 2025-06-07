@@ -1,18 +1,26 @@
 .container {
     padding: 1rem;
+    padding-top:0.2rem;
+    padding-bottom: 0.2rem;
     justify-self: center;
     width: 90%;
+}
+
+.box {
     border-radius: 10px;
-    margin-bottom: 1.5rem;
+}
+
+.userContainer {
+    margin-right: 1rem;
 }
 
 .user {
     width: fit-content;
     max-width: 75%;
-    padding: 1rem 2rem;
+    padding: 0.25rem 1.5rem;
     justify-self: right;
     background-color: #1a1a1a;
-    margin-right: 1rem;
+    margin-bottom: 5px;
 }
 
 .loading {
@@ -23,4 +31,25 @@
 .thinking {
     color: #B9B9B9;
     font-style: italic;
+}
+
+.btn {
+    display: flex;
+}
+
+.userbtn {
+    justify-self:right;
+}
+
+.gap {
+    height: 1.97rem;
+}
+
+.fade {
+  opacity: 0;
+  transition: 0.3s ease;
+}
+
+.fade.show {
+  opacity: 1;
 }

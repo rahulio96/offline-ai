@@ -41,7 +41,7 @@ export default function ChatPage() {
 
     const params = useParams();
     const chatId = params.id ? Number(params.id) : 0;
-    const { 
+    const {
         isSidebarOpen,
         selectedModel,
         isResponding,
@@ -52,8 +52,8 @@ export default function ChatPage() {
         setChatText,
         homePageModel,
         setIsConfirmOpen,
-     } = useOutletContext<OutletContextType>();
-    
+    } = useOutletContext<OutletContextType>();
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [response, setResponse] = useState<string>('');
@@ -79,10 +79,12 @@ export default function ChatPage() {
     }
 
     const scrollToBottom = () => {
-        const container = document.querySelector('.msgs');
-        if (container) {
-            container.scrollTop = container.scrollHeight;
-        }
+        setTimeout(() => {
+            const container = document.getElementById('messages-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }, 50);
     }
 
     // Important: Use a ref to avoid re-render and sending the message twice
@@ -148,7 +150,7 @@ export default function ChatPage() {
     const addResponse = async () => {
         if (!isResponding && response) {
             // Add the llm's response to the backend and db
-            const llmMessage: Message = 
+            const llmMessage: Message =
                 await invoke(
                     'save_message',
                     { message: response, chatId: chatId, authorModel: authorModel }
@@ -216,7 +218,10 @@ export default function ChatPage() {
 
     return (
         <>
-            <div className={`${style.msgs} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}>
+            <div
+                id="messages-container"
+                className={`${style.msgs} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}
+            >
                 {messages.map((msg) =>
                     <Message
                         key={msg.id}

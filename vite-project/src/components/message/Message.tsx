@@ -2,6 +2,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import style from './Message.module.css'
 import { useEffect, useState } from 'react';
+import IconButton from '../buttons/IconButton';
+import Trash from '../../icons/Trash';
 
 interface MessageProps {
   text: string;
@@ -56,23 +58,41 @@ const Message = ({ text, isUser, authorModel }: MessageProps) => {
         setDisplayText(text.slice(thinkLength, text.length));
       }
     }
-    
+
   }, [text, isThinking]);
 
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+
   return (
-    <div className={`${style.container} ${isUser ? style.user : ''}`}>
-      <div className={`${style.thinking}`}>
-        {thinkText &&
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}>
-            {thinkText}
-          </ReactMarkdown>}
+    <div
+      className={`${style.container} ${isUser ? style.userContainer : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`${style.box} ${isUser ? style.user : ''}`}>
+        <div className={`${style.thinking}`}>
+          {thinkText &&
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}>
+              {thinkText}
+            </ReactMarkdown>}
+        </div>
+
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}>
+          {displayText}
+        </ReactMarkdown>
       </div>
 
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}>
-        {displayText}
-      </ReactMarkdown>
+      {isHovered ? 
+        <div className={`
+          ${style.btn} ${isUser ? style.userbtn : ''}`
+        }>
+          <IconButton><Trash /></IconButton>
+        </div>
+        : 
+        <div className={`${style.gap}`} />
+      }
     </div>
   )
 }
