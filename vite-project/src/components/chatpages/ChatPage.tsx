@@ -216,6 +216,11 @@ export default function ChatPage() {
         scrollToBottom();
     }, [messages, response]);
 
+    const onMessageDelete = async (msgId: number) => {
+        const msgs: Message[] = await invoke('delete_message', { msgId: msgId, chatId: chatId });
+        setMessages(msgs);
+    }
+
     return (
         <>
             <div
@@ -228,6 +233,7 @@ export default function ChatPage() {
                         text={msg.content}
                         isUser={msg.author_model ? false : true}
                         authorModel={msg.author_model}
+                        onDelete={() => onMessageDelete(msg.id)}
                     />
                 )}
 

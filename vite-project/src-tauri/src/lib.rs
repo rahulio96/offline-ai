@@ -293,6 +293,22 @@ fn cancel_chat_response() -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+// Delete a message and its subsequent messages from a chat
+async fn delete_message(state: tauri::State<'_, DbState>, msg_id: i32, chat_id: i32) -> Result<Vec<CustomChatMessage>, String> {
+    {
+        let conn = state.conn.lock().unwrap();
+        // Since ids are incrementing, we just delete >= given message id
+        conn.execute("
+            DELETE FROM messages
+                WHERE chat_id = ?1
+                AND id >= ?2;
+        ", params![chat_id, msg_id]).unwrap();
+    }
+    
+    Ok(get_messages(state, chat_id).await.unwrap())
+}
+
 // Struct to hold the database connection state
 pub struct DbState {
     pub conn: Mutex<Connection>,
@@ -330,6 +346,7 @@ pub fn run() {
             save_message,
             create_chat,
             delete_chat,
+            delete_message,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

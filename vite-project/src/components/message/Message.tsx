@@ -9,9 +9,10 @@ interface MessageProps {
   text: string;
   isUser: boolean;
   authorModel?: string;
+  onDelete?: () => void;
 }
 
-const Message = ({ text, isUser, authorModel }: MessageProps) => {
+const Message = ({ text, isUser, authorModel, onDelete }: MessageProps) => {
 
   const [thinkText, setThinkText] = useState<string>('');
   const [isThinking, setIsThinking] = useState<boolean>(false);
@@ -88,7 +89,7 @@ const Message = ({ text, isUser, authorModel }: MessageProps) => {
           ${style.btn} ${isUser ? style.userbtn : ''}
           ${style.fade} ${isHovered ? style.show : ''}
       `}>
-          <IconButton><Trash /></IconButton>
+          <IconButton onClick={onDelete}><Trash /></IconButton>
       </div>
     </div>
   )
