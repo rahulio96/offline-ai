@@ -4,15 +4,18 @@ import style from './Message.module.css'
 import { useEffect, useState } from 'react';
 import IconButton from '../buttons/IconButton';
 import Trash from '../../icons/Trash';
+import Copy from '../../icons/Copy';
+import Check from '../../icons/Check';
 
 interface MessageProps {
   text: string;
   isUser: boolean;
+  areEditOptionsVisible: boolean;
   authorModel?: string;
   onDelete?: () => void;
 }
 
-const Message = ({ text, isUser, authorModel, onDelete }: MessageProps) => {
+const Message = ({ text, isUser, authorModel, onDelete, areEditOptionsVisible }: MessageProps) => {
 
   const [thinkText, setThinkText] = useState<string>('');
   const [isThinking, setIsThinking] = useState<boolean>(false);
@@ -64,6 +67,17 @@ const Message = ({ text, isUser, authorModel, onDelete }: MessageProps) => {
 
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
+  // For changing icon from copy to checkmark when user clicks
+  const [isChecked, setIsChecked] = useState<boolean>(false);
+
+  const onCopy = () => {
+    navigator.clipboard.writeText(text);
+    setIsChecked(true);
+    setTimeout(() => {
+      setIsChecked(false);
+    }, 1000);
+  }
+
   return (
     <div
       className={`${style.container} ${isUser ? style.userContainer : ''}`}
@@ -87,9 +101,13 @@ const Message = ({ text, isUser, authorModel, onDelete }: MessageProps) => {
  
       <div className={`
           ${style.btn} ${isUser ? style.userbtn : ''}
-          ${style.fade} ${isHovered ? style.show : ''}
+          ${style.fade} ${isHovered && !isThinking ? style.show : ''}
       `}>
-          <IconButton onClick={onDelete}><Trash /></IconButton>
+          {/* Don't allow delete/edit options if it's loading or responding */}
+          {areEditOptionsVisible && <IconButton onClick={onDelete}><Trash /></IconButton>}
+          <IconButton onClick={onCopy}>
+            {isChecked ? <Check color='currentColor' size='20' /> : <Copy />}
+          </IconButton>
       </div>
     </div>
   )

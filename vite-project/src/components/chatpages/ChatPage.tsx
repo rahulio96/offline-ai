@@ -9,10 +9,10 @@ import { useParams } from 'react-router-dom';
 import style from './Chat.module.css';
 
 // TODO:
-// - Add delete message functionality (should delete all subsequent messages too)
 // - Need to figure out how to store longer conversations, I can't just store the entire thing in an array
 // - There's also a bug where if ollama is open prior to opening the app, and the user tries to send
 // a message from the home page, it loads infinitely (this issue doesn't happen if ollama is closed before opening the app)
+// - HANDLE EXTERNAL LINKS
 
 type OutletContextType = {
     isSidebarOpen: boolean;
@@ -234,13 +234,14 @@ export default function ChatPage() {
                         isUser={msg.author_model ? false : true}
                         authorModel={msg.author_model}
                         onDelete={() => onMessageDelete(msg.id)}
+                        areEditOptionsVisible={!isLoading && !isResponding}
                     />
                 )}
 
                 {isLoading && <LoadingMessage />}
 
                 {/* Temporary msg that only shows when streaming response */}
-                {isResponding && <Message text={response} isUser={false} />}
+                {isResponding && <Message text={response} isUser={false} areEditOptionsVisible={false} />}
             </div>
 
             <div className={`${style.inner} ` + (isSidebarOpen ? `${style.open}` : `${style.close}`)}>

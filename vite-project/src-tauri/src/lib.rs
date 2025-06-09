@@ -4,15 +4,15 @@ use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::ChatMessageResponseStream;
 use ollama_rs::Ollama;
 use rusqlite::params;
+use rusqlite::{Connection, Result};
+use serde::Serialize;
+use std::fs;
+use std::process::Command;
+use std::sync::Mutex;
 use tauri::App;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::Window;
-use std::fs;
-use std::process::Command;
-use std::sync::Mutex;
-use rusqlite::{Connection, Result};
-use serde::Serialize;
 use tokio_util::sync::CancellationToken;
 
 #[tauri::command]
@@ -30,9 +30,12 @@ async fn get_models() -> Vec<String> {
 
 // Initialize SQLite database
 fn init_db(app: &App) -> Result<Connection> {
-
     // Create db file in app data directory (AppData/Roaming/offline-ai/history.db)
-    let path = app.path().app_data_dir().expect("Failed to get app data dir").join("history.db");
+    let path = app
+        .path()
+        .app_data_dir()
+        .expect("Failed to get app data dir")
+        .join("history.db");
 
     // Create directory if it doesn't exist
     if let Some(parent) = path.parent() {
@@ -44,7 +47,8 @@ fn init_db(app: &App) -> Result<Connection> {
     let conn = Connection::open(path)?;
 
     // Init tables
-    conn.execute_batch("
+    conn.execute_batch(
+        "
         CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -59,8 +63,9 @@ fn init_db(app: &App) -> Result<Connection> {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (chat_id) REFERENCES chats(id)
         );
-    ")?;
-    
+    ",
+    )?;
+
     Ok(conn)
 }
 
@@ -84,11 +89,12 @@ struct Chat {
 #[tauri::command]
 async fn create_chat(state: tauri::State<'_, DbState>, name: String) -> Result<Chat, String> {
     let conn = state.conn.lock().unwrap();
-    conn.execute("INSERT INTO CHATS (name) VALUES (?1)", params![name]).unwrap();
-    
+    conn.execute("INSERT INTO CHATS (name) VALUES (?1)", params![name])
+        .unwrap();
+
     // Get the last inserted chat id
     let last_id = conn.last_insert_rowid();
-    
+
     Ok(Chat {
         id: last_id as i32,
         name,
@@ -99,13 +105,15 @@ async fn create_chat(state: tauri::State<'_, DbState>, name: String) -> Result<C
 #[tauri::command]
 async fn delete_chat(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
-    
+
     // Delete messages associated with the chat
-    conn.execute("DELETE FROM MESSAGES WHERE chat_id = ?", params![chat_id]).unwrap();
-    
+    conn.execute("DELETE FROM MESSAGES WHERE chat_id = ?", params![chat_id])
+        .unwrap();
+
     // Delete the chat itself
-    conn.execute("DELETE FROM CHATS WHERE id = ?", params![chat_id]).unwrap();
-    
+    conn.execute("DELETE FROM CHATS WHERE id = ?", params![chat_id])
+        .unwrap();
+
     Ok(())
 }
 
@@ -113,13 +121,17 @@ async fn delete_chat(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<(
 #[tauri::command]
 async fn get_chats(state: tauri::State<'_, DbState>) -> Result<Vec<Chat>, String> {
     let conn = state.conn.lock().unwrap();
-    let mut stmt = conn.prepare("SELECT id, name, created_at FROM CHATS ORDER BY created_at DESC").unwrap();
-    let chat_iter = stmt.query_map([], |row| {
-        Ok(Chat {
-            id: row.get(0)?,
-            name: row.get(1)?,
+    let mut stmt = conn
+        .prepare("SELECT id, name, created_at FROM CHATS ORDER BY created_at DESC")
+        .unwrap();
+    let chat_iter = stmt
+        .query_map([], |row| {
+            Ok(Chat {
+                id: row.get(0)?,
+                name: row.get(1)?,
+            })
         })
-    }).unwrap();
+        .unwrap();
 
     let mut chats = Vec::new();
     for chat in chat_iter {
@@ -142,20 +154,25 @@ struct CustomChatMessage {
 
 // Fetch all messages from the current chat
 #[tauri::command]
-async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<Vec<CustomChatMessage>, String> {
+async fn get_messages(
+    state: tauri::State<'_, DbState>,
+    chat_id: i32,
+) -> Result<Vec<CustomChatMessage>, String> {
     // Locking here, so we need to put it in a closure to avoid issues
     let (frontend_messages, backend_messages) = {
         let conn = state.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, chat_id, author_model, content, created_at FROM MESSAGES WHERE chat_id = ? ORDER BY created_at ASC").unwrap();
-        let message_iter = stmt.query_map([chat_id], |row| {
-            Ok(CustomChatMessage {
-                id: row.get(0)?,
-                chat_id: row.get(1)?,
-                author_model: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
+        let message_iter = stmt
+            .query_map([chat_id], |row| {
+                Ok(CustomChatMessage {
+                    id: row.get(0)?,
+                    chat_id: row.get(1)?,
+                    author_model: row.get(2)?,
+                    content: row.get(3)?,
+                    created_at: row.get(4)?,
+                })
             })
-        }).unwrap();
+            .unwrap();
 
         // Update both the global messages variable and the frontend messages
         let mut frontend_messages = Vec::new();
@@ -190,7 +207,12 @@ async fn get_messages(state: tauri::State<'_, DbState>, chat_id: i32) -> Result<
 }
 
 #[tauri::command]
-async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id: i32, author_model: Option<String>) -> Result<CustomChatMessage, String> {
+async fn save_message(
+    state: tauri::State<'_, DbState>,
+    message: String,
+    chat_id: i32,
+    author_model: Option<String>,
+) -> Result<CustomChatMessage, String> {
     // Get list of messages (history)
     let mut messages = MESSAGES.lock().await;
 
@@ -209,26 +231,36 @@ async fn save_message(state: tauri::State<'_, DbState>, message: String, chat_id
 
         if author_model.is_some() {
             // If author_model is provided, use it
-            conn.execute("INSERT INTO MESSAGES (chat_id, author_model, content) VALUES (?1, ?2, ?3)",
-                params![chat_id, author_model, user_json_content]).unwrap();
+            conn.execute(
+                "INSERT INTO MESSAGES (chat_id, author_model, content) VALUES (?1, ?2, ?3)",
+                params![chat_id, author_model, user_json_content],
+            )
+            .unwrap();
         } else {
             // Otherwise, insert without author_model
-            conn.execute("INSERT INTO MESSAGES (chat_id, content) VALUES (?1, ?2)",
-                params![chat_id, user_json_content]).unwrap();
+            conn.execute(
+                "INSERT INTO MESSAGES (chat_id, content) VALUES (?1, ?2)",
+                params![chat_id, user_json_content],
+            )
+            .unwrap();
         }
 
         // Once we insert, we fetch it from the db to get info like msg id (will be useful later for deleting/editing)
         let last_id = conn.last_insert_rowid();
-        let mut stmt = conn.prepare("SELECT id, chat_id, author_model, created_at FROM MESSAGES WHERE id = ?", ).unwrap();
-            row = stmt.query_row([last_id], |row| {
-            Ok(CustomChatMessage {
-                id: row.get(0)?,
-                chat_id: row.get(1)?,
-                author_model: row.get(2)?,
-                content: message.clone(),
-                created_at: row.get(3)?,
+        let mut stmt = conn
+            .prepare("SELECT id, chat_id, author_model, created_at FROM MESSAGES WHERE id = ?")
+            .unwrap();
+        row = stmt
+            .query_row([last_id], |row| {
+                Ok(CustomChatMessage {
+                    id: row.get(0)?,
+                    chat_id: row.get(1)?,
+                    author_model: row.get(2)?,
+                    content: message.clone(),
+                    created_at: row.get(3)?,
+                })
             })
-        }).unwrap();
+            .unwrap();
     }
 
     messages.push(ollama_message);
@@ -267,9 +299,7 @@ async fn chat_response(window: Window, model_name: String) -> Result<(), String>
         }
 
         next = stream.next() => next
-    }
-    
-    {
+    } {
         let partial_response = res.unwrap().message.content;
 
         // Send partial response from the stream to the frontend
@@ -295,17 +325,25 @@ fn cancel_chat_response() -> Result<(), String> {
 
 #[tauri::command]
 // Delete a message and its subsequent messages from a chat
-async fn delete_message(state: tauri::State<'_, DbState>, msg_id: i32, chat_id: i32) -> Result<Vec<CustomChatMessage>, String> {
+async fn delete_message(
+    state: tauri::State<'_, DbState>,
+    msg_id: i32,
+    chat_id: i32,
+) -> Result<Vec<CustomChatMessage>, String> {
     {
         let conn = state.conn.lock().unwrap();
         // Since ids are incrementing, we just delete >= given message id
-        conn.execute("
+        conn.execute(
+            "
             DELETE FROM messages
                 WHERE chat_id = ?1
                 AND id >= ?2;
-        ", params![chat_id, msg_id]).unwrap();
+        ",
+            params![chat_id, msg_id],
+        )
+        .unwrap();
     }
-    
+
     Ok(get_messages(state, chat_id).await.unwrap())
 }
 
