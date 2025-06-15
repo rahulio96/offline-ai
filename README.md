@@ -1,5 +1,9 @@
+<p align="center">
+   <img src="https://github.com/user-attachments/assets/400ab8e4-b41f-4e48-aeee-9821a09a5f34" alt=""/>
+</p>
+
 # Offline AI
-The desktop app that let's you interact with AI LLM models locally on your PC. All conversation history is stored locally, meaning you have full control over your personal data. Once you download and install everything, it also works fully offline!
+The desktop app that lets you interact with AI LLM models locally on your PC. All conversation history is stored locally, meaning you have full control over your personal data. Once you download and install everything, it also works fully offline!
 
 ## Download
 - See [GitHub Releases](https://github.com/rahulio96/offline-ai/releases).
